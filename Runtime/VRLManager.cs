@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Net;
 using JetBrains.Annotations;
 using RTP;
@@ -29,6 +30,11 @@ namespace VRLive.Runtime
 
         public ClientPortMap localPorts;
 
+        // [ReadOnly(true)]
+        public ServerPortMap remotePorts;
+
+        public int slimeVrMocapInPort;
+
         public HostSettings hostSettings;
 
         /// <summary>
@@ -56,6 +62,8 @@ namespace VRLive.Runtime
         public PerformerManager performerManager;
 
         public RemotePlayerController remotePlayerController;
+
+        public LocalPlayerManager localPlayerManager;
         
         #endregion
 
@@ -94,18 +102,19 @@ namespace VRLive.Runtime
         private void HandleHandshakeCompletion(HandshakeResult result)
         {
             clientUserId = result.userId;
+            remotePorts = result.serverPorts;
             
             backingTrackManager ??= gameObject.AddComponent<BackingTrackManager>();
             // TODO clean this up in a way that doesn't involve as much duplication, maybe by passing some value in
             backingTrackManager.Listener.Port = result.serverPorts.backing_track_conn_port;
             backingTrackManager.Listener.Host = hostSettings.remoteIP;
+            backingTrackManager.Listener.label = "backing track";
             backingTrackManager.Listener.StartListener();
             serverEventManager ??= gameObject.AddComponent<ServerEventManager>();
             serverEventManager.Listener.Port = result.serverPorts.server_event_conn_port;
             serverEventManager.Listener.Host = hostSettings.remoteIP;
+            serverEventManager.Listener.label = "server event";
             serverEventManager.Listener.StartListener();
-
-            
             
             if (userType == UserType.Performer)
             {
@@ -134,6 +143,8 @@ namespace VRLive.Runtime
             SpawnAudienceHandler();
             
             SpawnPerformerHandler();
+            
+            SpawnLocalPlayerHandler();
 
             // create the remaining players.
             
@@ -165,6 +176,25 @@ namespace VRLive.Runtime
             }
             
             
+        }
+
+        public void SpawnLocalPlayerHandler()
+        {
+            // todo diversify this to include support for either
+            var childComp = GetComponentInChildren<LocalPlayerManager>();
+            if (!childComp)
+            {
+                var handler = new GameObject("local player handler");
+                handler.transform.parent = transform;
+                childComp = handler.AddComponent<LocalPlayerManager>();
+            }
+
+            localPlayerManager = childComp;
+            // safe to do here since it's post handshake
+            localPlayerManager.relay.listeningPort = slimeVrMocapInPort;
+            localPlayerManager.relay.destPort = localPlayerManager.GetTargetMocapPort(remotePorts);
+            localPlayerManager.relay.destIP = hostSettings.remoteIP;
+            // localPlayerManager.oscServer.StartServer();
         }
 
         public void SpawnAudienceHandler()

@@ -20,6 +20,10 @@ namespace VRLive.Runtime.Player
 
         public string label;
 
+        
+        [Header("If true, users of this type will spawn locally as their own representations.")]
+        public bool acceptLocalUser = true;
+
         public ushort listenPort
         {
             get => listener ? listener.listeningPort : preInitListenPort;
