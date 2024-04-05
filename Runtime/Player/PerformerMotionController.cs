@@ -8,16 +8,17 @@ namespace VRLive.Runtime.Player
     {
         protected override void OnNewMocapData(Message msg)
         {
-            // I think the osc server should handle this by itself
+            // the OSC handler will take care of this
             return;
-            throw new System.NotImplementedException();
+            // throw new System.NotImplementedException();
         }
         
 
         protected override void OnNewAudioData(VRTPData data)
         {
-            // return;
-            throw new System.NotImplementedException();
+            // audio data is handled by the audio listener
+            return;
+            // throw new System.NotImplementedException();
         }
 
         public override void Awake()

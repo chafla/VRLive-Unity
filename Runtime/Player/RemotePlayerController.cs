@@ -7,7 +7,7 @@ using uOSC;
 namespace VRLive.Runtime.Player
 {
     /// <summary>
-    /// Controller managing instances of one kind of client player.
+    /// Controller managing instances of one type of client player.
     /// </summary>
     // [RequireComponent(typeof(RTPListener))]
     public abstract class RemotePlayerController : MonoBehaviour
@@ -17,6 +17,8 @@ namespace VRLive.Runtime.Player
         public ushort preInitListenPort;
 
         public ushort clientUserId;
+
+        public string label;
 
         public ushort listenPort
         {
@@ -59,22 +61,27 @@ namespace VRLive.Runtime.Player
             players = new Dictionary<int, PlayerMotionController>();
         }
 
-        public void OnEnable()
+        public virtual void OnEnable()
         {
             
             listener = gameObject.AddComponent<RTPListener>();
+            listener.label = label;
             listener.listeningPort = preInitListenPort;
             listener.OnNewData += OnNewListenerData;
             listener.StartServer();
             
             manager ??= GetComponentInParent<ServerEventManager>();
             manager ??= GetComponent<ServerEventManager>();
-            manager.OnNewServerEvent += OnNewServerEvent;
+            if (manager)
+                manager.OnNewServerEvent += OnNewServerEvent;
+            else 
+                Debug.LogWarning($"Server event manager was not found on {label} controller init, hope you're adding it later!");
 
         }
 
         public void UpdateManager(ServerEventManager newManager)
         {
+            Debug.Log($"Adding server event manager for {label}");
             manager = newManager;
             manager.OnNewServerEvent += OnNewServerEvent;
         }

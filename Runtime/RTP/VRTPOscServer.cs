@@ -12,6 +12,8 @@ namespace RTP
         public bool WaitForAudio = false;
         private Parser _parser;
 
+        private bool _active = false;
+
         // [DoNotSerialize]
         // private new int port;
         
@@ -20,9 +22,15 @@ namespace RTP
             _parser = new Parser();
         }
         
-        new void OnEnable()
+        void OnEnable()
         {
             Listener = GetComponent<RTPListener>();
+            _active = true;
+        }
+
+        void OnDisable()
+        {
+            _active = false;
         }
         void Update()
         {
@@ -46,7 +54,10 @@ namespace RTP
             //         return;
             //     }
             // }
-            while (!Listener.MocapDataIn.IsEmpty)
+            var maxPerFrame = 500;
+            var packetsRead = 0;
+            // Debug.Log($"Incoming mocap pressure: {Listener.MocapDataIn.Count}");
+            while (_active && !Listener.MocapDataIn.IsEmpty && packetsRead++ < maxPerFrame)
             {
                 if (WaitForAudio && Listener.MocapDataIn.TryPeek(out data))
                 {
@@ -65,8 +76,6 @@ namespace RTP
                 }
                 if (Listener.MocapDataIn.TryDequeue(out data))
                 {
-                    
-                    
                     var pos = 0;
                     // TODO may be worth revisiting this at some point to remove this weird indirection
                     _parser.Parse(data.Payload, ref pos, data.PayloadSize);
@@ -88,6 +97,11 @@ namespace RTP
                 
                 
                 
+            }
+
+            if (packetsRead >= maxPerFrame)
+            {
+                Debug.LogWarning($"Current mocap pressure after parsing: {Listener.MocapDataIn.Count}");
             }
         }
 

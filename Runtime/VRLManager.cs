@@ -67,6 +67,10 @@ namespace VRLive.Runtime
 
         public GameObject basePerformerObjectType;
 
+        // Event invoked after a handshake has been successfully handled, meaning that all of the constituent items
+        // should be initialized.
+        // public event EventHandler<HandshakeCompletion> AfterConsumeHandshake; 
+
         public void Awake()
         {
             HandshakeManager = new HandshakeManager(hostSettings.HandshakeEndPoint(), localPorts, userType, clientIdentifier);
@@ -159,6 +163,8 @@ namespace VRLive.Runtime
                 }
                
             }
+            
+            
         }
 
         public void SpawnAudienceHandler()
@@ -173,6 +179,12 @@ namespace VRLive.Runtime
 
             audienceManager = childComp;
 
+            // capture the value in a closure so it's addressed on handshake
+            // (); += (sender, _) =>
+            // {
+            //     audienceManager.UpdateManager((ServerEventManager)sender);
+            // };
+            
             audienceManager.UpdateManager(serverEventManager);
             audienceManager.listenPort = localPorts.audience_motion_capture;
             audienceManager.clientUserId = clientUserId;

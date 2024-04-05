@@ -23,6 +23,8 @@ namespace VRLive.Runtime
 
         private bool _active = false;
 
+        public string label;
+
         /// <summary>
         /// Collection of all messages that we are currently hanging onto and haven't yet been asked for
         /// </summary>
@@ -71,7 +73,7 @@ namespace VRLive.Runtime
         public void UpdateConnectionTarget(string addr, ushort port)
         {
             Port = port;
-            Host = Host;
+            Host = addr;
         }
 
         public void Update()
@@ -139,16 +141,18 @@ namespace VRLive.Runtime
             int _activePort = 0;
             // var invalidCooldownSecs = 5;
             // var lastInvalidCooldown = Time.time;
+           
             while (_active)
             {
                 if (_activeHost != Host || _activePort != Port)
                 {
                     _socket ??= new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                    Debug.Log($"Listening for TCP traffic on {Port}");
+                    Debug.Log($"{label} Listening for TCP traffic on {Port}");
                     _socket.Connect(new IPEndPoint(IPAddress.Parse(Host), Port));
-                    Debug.Log($"Got connection to {_socket.RemoteEndPoint}");
+                    Debug.Log($"{label} Got connection to {_socket.RemoteEndPoint}");
                     _activeHost = Host;
                     _activePort = Port;
+                    _socket.ReceiveTimeout = 500;
                 }
                 
                 // get the message preamble
@@ -160,8 +164,14 @@ namespace VRLive.Runtime
                 }
                 catch (SocketException e)
                 {
-                    Debug.LogException(e);
-                    break;
+                    if (e.SocketErrorCode != SocketError.TimedOut)
+                    {
+                        Debug.LogException(e);
+                        break;
+                    }
+                    // time out every so often so we have the chance to stop and rest
+                    continue;
+
                 }
                 
                 if (bytesIn == 0)
@@ -180,7 +190,7 @@ namespace VRLive.Runtime
 
                 string messageType = Encoding.UTF8.GetString(msgBuf, 0, titleMessageLen);
 
-                onNewSocketMessage? callback;
+                onNewSocketMessage callback;
                 var delegateToCall = callbacks.TryGetValue(messageType, out callback);
                 if (!delegateToCall || callback == null)
                 {
@@ -218,7 +228,7 @@ namespace VRLive.Runtime
 
             }
             
-            Debug.LogWarning("Shutting down listener!");
+            Debug.LogWarning($"Shutting down {label} listener!");
         }
     }
 

@@ -113,7 +113,7 @@ namespace RTP
             
             while (Running)
             {
-                buffer = new byte[100000];
+                buffer = new byte[50000];
                 if (lastPort != listeningPort)
                 {
                     currentEndpoint = new IPEndPoint(new IPAddress(0), listeningPort);
@@ -128,8 +128,12 @@ namespace RTP
                 {
                     if (Running)
                     {
-                        Debug.LogError($"{label} on {listeningPort} had an exception");
-                        Debug.LogException(e);
+                        if (e.SocketErrorCode != SocketError.TimedOut)
+                        {
+                            Debug.LogError($"{label} on {listeningPort} had an exception");
+                            Debug.LogException(e);
+                        }
+                       
                     }
 
                     continue;

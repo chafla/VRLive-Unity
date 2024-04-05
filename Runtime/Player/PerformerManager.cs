@@ -27,6 +27,21 @@ namespace VRLive.Runtime.Player
         public override void Awake()
         {
             base.Awake();
+            
+            // rtpListener ??= gameObject.AddComponent<RTPListener>();
+            // rtpListener.listeningPort = localPorts.vrtp_data;
+            // rtpListener.StartServer();
+            
+
+            // these both rely on the rtp listener
+            // oscServer ??= gameObject.AddComponent<VRTPOscServer>();
+            // rtpAudioListener ??= gameObject.AddComponent<RTPAudioListenerComponentized>();
+
+        }
+
+        public override void OnEnable()
+        {
+            base.OnEnable();
             vmcHandler ??= gameObject.GetComponent<ExternalReceiver>();
             vmcHandler ??= gameObject.AddComponent<ExternalReceiver>();
 
@@ -42,22 +57,9 @@ namespace VRLive.Runtime.Player
 
             // we already have an RTP listener active so we can just start using this one
             oscServer = gameObject.AddComponent<VRTPOscServer>();
+            oscServer.Listener = listener;
             audioListener = gameObject.AddComponent<RTPAudioListenerComponentized>();
             audioListener.Listener = listener;
-            
-            // rtpListener ??= gameObject.AddComponent<RTPListener>();
-            // rtpListener.listeningPort = localPorts.vrtp_data;
-            // rtpListener.StartServer();
-            
-
-            // these both rely on the rtp listener
-            // oscServer ??= gameObject.AddComponent<VRTPOscServer>();
-            // rtpAudioListener ??= gameObject.AddComponent<RTPAudioListenerComponentized>();
-            
-
-
-
-
         }
         
         protected override void OnNewListenerData(object obj, VRTPPacket pkt)

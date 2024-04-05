@@ -126,7 +126,7 @@ namespace RTP
                 {
                     remoteEndPoint = new IPEndPoint(IPAddress.Parse(sendServerIP), sendServerPort);
                 }
-                catch (FormatException e)
+                catch (FormatException)
                 {
                     Debug.LogWarning($"Invalid network address with IP: {sendServerIP} and port {sendServerPort}");
                     return;
@@ -172,7 +172,7 @@ namespace RTP
 
                 if (pos - lastPos > 0)
                 {
-                    var bytesPerSample = sizeof(float);
+                    // var bytesPerSample = sizeof(float);
                     // var effectiveFrameSize = (pos - lastPos) / bytesPerSample / mic.channels;
                     
                     // Allocate the space for the new sample.
