@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using RTP;
 using UnityEngine;
 using uOSC;
@@ -55,18 +56,21 @@ namespace VRLive.Runtime.Player
             }
             // members = new List<PlayerController>();
             
-            // listener = gameObject.AddComponent<RTPListener>();
-            // listener.listeningPort = preInitListenPort;
-            // listener.OnNewData += OnNewListenerData;
-            // listener.StartServer();
-            
-            // manager ??= GetComponentInParent<ServerEventManager>();
-            // manager ??= GetComponent<ServerEventManager>();
-            // manager.OnNewServerEvent += OnNewServerEvent;
-
             players = new Dictionary<int, PlayerMotionController>();
+        }
 
+        public void OnEnable()
+        {
             
+            listener = gameObject.AddComponent<RTPListener>();
+            listener.listeningPort = preInitListenPort;
+            listener.OnNewData += OnNewListenerData;
+            listener.StartServer();
+            
+            manager ??= GetComponentInParent<ServerEventManager>();
+            manager ??= GetComponent<ServerEventManager>();
+            manager.OnNewServerEvent += OnNewServerEvent;
+
         }
 
         public void UpdateManager(ServerEventManager newManager)

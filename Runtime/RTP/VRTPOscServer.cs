@@ -17,8 +17,12 @@ namespace RTP
         
         void Awake()
         {
-            Listener = GetComponent<RTPListener>();
             _parser = new Parser();
+        }
+        
+        new void OnEnable()
+        {
+            Listener = GetComponent<RTPListener>();
         }
         void Update()
         {
@@ -94,11 +98,6 @@ namespace RTP
         }
 
         new void StopServer()
-        {
-            
-        }
-
-        new void OnEnable()
         {
             
         }

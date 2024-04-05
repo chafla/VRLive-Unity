@@ -26,6 +26,8 @@ namespace RTP
         // private ushort _LastPort;
 
         public bool startOnAwake = false;
+
+        public string label;
         
         protected Decoder Decoder;
 
@@ -56,7 +58,7 @@ namespace RTP
         //     _LastPort = ListeningPort;
         // }
 
-        public void StartServer(string label = "(unknown)")
+        public void StartServer()
         {
             if (Running)
             {
@@ -94,7 +96,7 @@ namespace RTP
             catch (SocketException e)
             {
                 Debug.LogException(e);
-                Debug.LogError($"Failed to bind to {listeningPort}");
+                Debug.LogError($"{label} Failed to bind to {listeningPort}");
                 return;
             }
             
@@ -124,8 +126,12 @@ namespace RTP
                 }
                 catch (SocketException e)
                 {
-                    if(Running)
+                    if (Running)
+                    {
+                        Debug.LogError($"{label} on {listeningPort} had an exception");
                         Debug.LogException(e);
+                    }
+
                     continue;
                 }
 

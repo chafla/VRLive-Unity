@@ -16,7 +16,7 @@ namespace VRLive.Runtime.Player
 
         protected override void OnNewAudioData(VRTPData data)
         {
-            return;
+            // return;
             throw new System.NotImplementedException();
         }
 

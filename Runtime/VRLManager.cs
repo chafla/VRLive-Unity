@@ -30,6 +30,11 @@ namespace VRLive.Runtime
         public ClientPortMap localPorts;
 
         public HostSettings hostSettings;
+
+        /// <summary>
+        /// If true, don't try to spin up audience or performer parts.
+        /// </summary>
+        public bool onlyRunLocal;
         
         #region Components
         // all of the different components we expect to have at runtime
@@ -96,13 +101,6 @@ namespace VRLive.Runtime
             serverEventManager.Listener.Host = hostSettings.remoteIP;
             serverEventManager.Listener.StartListener();
 
-            rtpListener ??= gameObject.AddComponent<RTPListener>();
-            rtpListener.listeningPort = localPorts.vrtp_data;
-            rtpListener.StartServer();
-
-            // these both rely on the rtp listener
-            oscServer ??= gameObject.AddComponent<VRTPOscServer>();
-            rtpAudioListener ??= gameObject.AddComponent<RTPAudioListenerComponentized>();
             
             
             if (userType == UserType.Performer)
@@ -113,20 +111,46 @@ namespace VRLive.Runtime
                 audioStreamer.sendServerIP = hostSettings.remoteIP;
                 // audioStreamer.s
             }
+
+            if (onlyRunLocal)
+            {
+                rtpListener ??= gameObject.GetComponent<RTPListener>() ?? gameObject.AddComponent<RTPListener>();
+                rtpListener.listeningPort = localPorts.vrtp_data;
+                rtpListener.label = "VRL Manager";
+                rtpListener.StartServer();
+
+                // these both rely on the rtp listener
+                oscServer ??= gameObject.AddComponent<VRTPOscServer>();
+                // oscServer.StartServer();
+                rtpAudioListener ??= gameObject.AddComponent<RTPAudioListenerComponentized>();
+                rtpAudioListener.Listener = rtpListener;
+                return;
+            }
             
             SpawnAudienceHandler();
             
             SpawnPerformerHandler();
 
             // create the remaining players.
+            
             foreach (var user in result.OtherUsers)
             {
                 switch (user.user_type)
                 {
                     case UserType.Audience:
+                        if (!audienceManager)
+                        {
+                            Debug.LogWarning("No audience manager exists, cannot create related user!");
+                            break;
+                        }
                         audienceManager.CreateNewPlayer(user.user_id, user.user_type);
                         break;
                     case UserType.Performer:
+                        if (!performerManager)
+                        {
+                            Debug.LogWarning("No performer manager exists, cannot create related user!");
+                            break;
+                        }
                         performerManager.CreateNewPlayer(user.user_id, user.user_type);
                         break;
                     default:
