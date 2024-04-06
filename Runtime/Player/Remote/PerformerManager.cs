@@ -60,8 +60,6 @@ namespace VRLive.Runtime.Player
             audioListener.Listener = listener;
         }
         
-        
-
         public override void CreateNewPlayer(int userId, UserType usrType)
         {
             if (usrType != UserType.Performer)

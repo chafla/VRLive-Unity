@@ -105,7 +105,7 @@ namespace VRLive.Runtime.Player
                 // This can lead to significant pressure, not on the rust side but on the unity side, trying to keep up with everything.
                 var messagesInCurBundle = 0;
                 var maxMessagesPerBundle = 10;
-                while (_active && mocapOut.TryDequeue(out msg))
+                while (_active && mocapOut != null && mocapOut.TryDequeue(out msg))
                 {
                     // todo if this breaks try sending them individually, but I think bundling them up makes more sense?
                     // Bundle b = new Bundle();
@@ -128,7 +128,8 @@ namespace VRLive.Runtime.Player
         public virtual int GetTargetMocapPort(ServerPortMap map)
         {
             // TODO OVERRIDE THIS
-            return map.audience_mocap_in;
+            Debug.LogWarning("Using default audience mocap port for listener!!!!!!! don't forget this you asshole!!!!!!!");
+            return map.performer_mocap_in;
         }
 
 
