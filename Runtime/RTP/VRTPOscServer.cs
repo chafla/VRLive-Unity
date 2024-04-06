@@ -1,16 +1,18 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using Unity.VisualScripting;
 using UnityEngine;
 using uOSC;
 
 namespace RTP
 {
-    [RequireComponent(typeof(RTPListener))]
+    // [RequireComponent(typeof(RTPListener))]
     public class VRTPOscServer : uOscServer
     {
-        public RTPListener Listener;
+        // public RTPListener Listener;
         public bool WaitForAudio = false;
         private Parser _parser;
+        public ConcurrentQueue<VRTPData> mocapDataIn;
 
         private bool _active = false;
 
@@ -24,7 +26,16 @@ namespace RTP
         
         void OnEnable()
         {
-            Listener = GetComponent<RTPListener>();
+            
+            var listener = GetComponent<RTPListener>();
+            if (listener)
+            {
+                mocapDataIn = listener.MocapDataIn;
+            }
+            else
+            {
+                mocapDataIn = new ConcurrentQueue<VRTPData>();
+            }
             _active = true;
         }
 
@@ -57,9 +68,9 @@ namespace RTP
             var maxPerFrame = 500;
             var packetsRead = 0;
             // Debug.Log($"Incoming mocap pressure: {Listener.MocapDataIn.Count}");
-            while (_active && !Listener.MocapDataIn.IsEmpty && packetsRead++ < maxPerFrame)
+            while (_active && !mocapDataIn.IsEmpty && packetsRead++ < maxPerFrame)
             {
-                if (WaitForAudio && Listener.MocapDataIn.TryPeek(out data))
+                if (WaitForAudio && mocapDataIn.TryPeek(out data))
                 {
                     var dt = DateTime.Now - data.Arrived;
                     // buflength is the buffer size in samples
@@ -74,7 +85,7 @@ namespace RTP
                         break;
                     }
                 }
-                if (Listener.MocapDataIn.TryDequeue(out data))
+                if (mocapDataIn.TryDequeue(out data))
                 {
                     var pos = 0;
                     // TODO may be worth revisiting this at some point to remove this weird indirection
@@ -101,7 +112,7 @@ namespace RTP
 
             if (packetsRead >= maxPerFrame)
             {
-                Debug.LogWarning($"Current mocap pressure after parsing: {Listener.MocapDataIn.Count}");
+                Debug.LogWarning($"Current mocap pressure after parsing: {mocapDataIn.Count}");
             }
         }
 

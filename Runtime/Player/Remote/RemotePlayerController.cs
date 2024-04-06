@@ -117,7 +117,7 @@ namespace VRLive.Runtime.Player
             }
         }
 
-        protected abstract void OnNewListenerData(object obj, VRTPPacket pkt);
+        // protected abstract void OnNewListenerData(object obj, VRTPPacket pkt);
 
         public void OnDisable()
         {
@@ -143,6 +143,15 @@ namespace VRLive.Runtime.Player
         //             throw new Exception($"Unknown usertype to instantiate: {userType}");
         //     }
         // }
+        
+        protected void OnNewListenerData(object obj, VRTPPacket pkt)
+        {
+            PlayerMotionController player;
+            if (players.TryGetValue(pkt.UserID, out player))
+            {
+                player.OnListenerData(this, pkt);
+            }
+        }
 
         // public void OnListenerData(object src, VRTPPacket pkt);
 

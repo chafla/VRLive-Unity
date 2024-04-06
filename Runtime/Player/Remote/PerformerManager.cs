@@ -8,7 +8,7 @@ namespace VRLive.Runtime.Player
     public class PerformerManager : RemotePlayerController
     {
 
-        public ExternalReceiver vmcHandler;
+        
 
         /// <summary>
         /// The VRM avatar that we plan to use as our base.
@@ -16,13 +16,13 @@ namespace VRLive.Runtime.Player
         private VRMMeta avatar;
 
         // The osc "server" responsible for sending the bone data to the vrm model
-        public VRTPOscServer oscServer;
+        // public VRTPOscServer oscServer;
 
         public RTPAudioListenerComponentized audioListener;
 
         // public RTPListener RtpListener;
 
-        public int ServerPort;
+        // public int ServerPort;
 
         public override void Awake()
         {
@@ -42,8 +42,7 @@ namespace VRLive.Runtime.Player
         public override void OnEnable()
         {
             base.OnEnable();
-            vmcHandler ??= gameObject.GetComponent<ExternalReceiver>();
-            vmcHandler ??= gameObject.AddComponent<ExternalReceiver>();
+           
 
             // var existingAvatar = baseModel.GetComponent<VRMMeta>();
 
@@ -53,29 +52,21 @@ namespace VRLive.Runtime.Player
                 return;
             }
 
-            vmcHandler.Model = baseModel;
 
             // we already have an RTP listener active so we can just start using this one
-            oscServer = gameObject.AddComponent<VRTPOscServer>();
-            oscServer.Listener = listener;
+            // oscServer = gameObject.AddComponent<VRTPOscServer>();
+            // oscServer.mocapDataIn = listener.MocapDataIn;  // link the two queues together, the server just needs the messages
             audioListener = gameObject.AddComponent<RTPAudioListenerComponentized>();
             audioListener.Listener = listener;
         }
         
-        protected override void OnNewListenerData(object obj, VRTPPacket pkt)
-        {
-            PlayerMotionController player;
-            if (players.TryGetValue(pkt.UserID, out player))
-            {
-                player.OnListenerData(this, pkt);
-            }
-        }
+        
 
         public override void CreateNewPlayer(int userId, UserType usrType)
         {
             if (usrType != UserType.Performer)
             {
-                Debug.Log($"User {userId} was not an audience member ({usrType})! Ignoring.");
+                Debug.Log($"User {userId} was not a performer ({usrType})! Ignoring.");
                 return;
             }
 
@@ -86,7 +77,7 @@ namespace VRLive.Runtime.Player
             }
             else
             {
-                Debug.LogWarning($"Adding new audience member {userId}");
+                Debug.LogWarning($"Adding new performer {userId}");
             }
             
             var newObj = Instantiate(baseModel);

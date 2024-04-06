@@ -5,6 +5,7 @@ using JetBrains.Annotations;
 using RTP;
 using UnityEngine;
 using VRLive.Runtime.Player;
+using VRLive.Runtime.Player.Local;
 
 namespace VRLive.Runtime
 {
@@ -190,10 +191,13 @@ namespace VRLive.Runtime
             }
 
             localPlayerManager = childComp;
+            var relay = localPlayerManager.gameObject.AddComponent<OscRelay>();
+            localPlayerManager.relay = relay;
             // safe to do here since it's post handshake
             localPlayerManager.relay.listeningPort = slimeVrMocapInPort;
             localPlayerManager.relay.destPort = localPlayerManager.GetTargetMocapPort(remotePorts);
             localPlayerManager.relay.destIP = hostSettings.remoteIP;
+            localPlayerManager.onHandshake();
             // localPlayerManager.oscServer.StartServer();
         }
 

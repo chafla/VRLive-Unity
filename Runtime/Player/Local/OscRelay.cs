@@ -28,13 +28,13 @@ namespace VRLive.Runtime.Player.Local
         public void Awake()
         {
             incomingData = new ConcurrentQueue<byte[]>();
-            
-            _sendThread = new Thread(SendMocapDataThread);
-            _listenThread = new Thread(RecvMocapDataThread);
         }
 
         public void StartThreads()
         {
+            
+            _sendThread = new Thread(SendMocapDataThread);
+            _listenThread = new Thread(RecvMocapDataThread);
             if (!_sendActive)
                 _sendThread.Start();
             if (!_listenActive)
@@ -46,15 +46,39 @@ namespace VRLive.Runtime.Player.Local
         public void RecvMocapDataThread()
         {
             var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            socket.SendTimeout = 5000;
+            socket.ReceiveTimeout = 5000;
             
-            socket.Bind(new IPEndPoint(new IPAddress(0), listeningPort));
+            // socket.Bind(new IPEndPoint(new IPAddress(0), listeningPort));
             byte[] buf;
             _listenActive = true;
+            var lastPort = listeningPort;
+            EndPoint currentEndpoint = new IPEndPoint(new IPAddress(0), listeningPort);
+            socket.Bind(currentEndpoint);
             while (_listenActive)
-            {
+            { 
+                if (lastPort != listeningPort)
+                {
+                    currentEndpoint = new IPEndPoint(new IPAddress(0), listeningPort);
+                    lastPort = listeningPort;
+                    socket.Bind(currentEndpoint);
+                }
                 buf = new byte[10000];
-                var bytesIn= socket.Receive(buf);
+                int bytesIn;
+                try
+                {
+                    bytesIn = socket.Receive(buf);
+                }
+                catch (SocketException e)
+                {
+                    if (e.SocketErrorCode != SocketError.TimedOut)
+                    {
+                        Debug.LogException(e);
+                        break;
+                    }
+
+                    continue;
+                }
+                
                 
                 OnNewMessage?.Invoke(this, buf[..bytesIn]);
                 incomingData.Enqueue(buf[..bytesIn]);

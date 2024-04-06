@@ -30,6 +30,8 @@ namespace VRLive.Runtime.Player
         /// </summary>
         public int localMocapToServerPort;
 
+        public int mocapInPort;
+
         /// <summary>
         /// The IP of the server.
         /// </summary>
@@ -61,7 +63,6 @@ namespace VRLive.Runtime.Player
             mocapOut.Enqueue(msg);
             // print(msg);
         }
-        
         
         
         
@@ -104,7 +105,7 @@ namespace VRLive.Runtime.Player
                 // This can lead to significant pressure, not on the rust side but on the unity side, trying to keep up with everything.
                 var messagesInCurBundle = 0;
                 var maxMessagesPerBundle = 10;
-                while (mocapOut.TryDequeue(out msg))
+                while (_active && mocapOut.TryDequeue(out msg))
                 {
                     // todo if this breaks try sending them individually, but I think bundling them up makes more sense?
                     // Bundle b = new Bundle();
@@ -136,6 +137,8 @@ namespace VRLive.Runtime.Player
             mocapOut = new ConcurrentQueue<Message>();
             // _active = false;
             relay = GetComponent<OscRelay>() ?? gameObject.AddComponent<OscRelay>();
+            // relay.listeningPort = mocapInPort;
+            // relay.StartThreads();
         }
 
         public void OnDisable()

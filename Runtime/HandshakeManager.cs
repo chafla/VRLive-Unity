@@ -86,7 +86,7 @@ namespace VRLive.Runtime
                 var handshakeComp = JsonUtility.FromJson<HandshakeCompletion>(bufDecoded);
 
                 var result = new HandshakeResult(syn, handshakeComp);
-                Debug.LogWarning("Handshake completed successfully.");
+                Debug.LogWarning($"Handshake completed successfully. We are user #{result.userId}");
                 
                 OnHandshakeCompletion?.Invoke(this, result);
                 

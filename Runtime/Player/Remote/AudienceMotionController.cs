@@ -10,6 +10,8 @@ namespace VRLive.Runtime.Player
         public Transform lController;
         public Transform rController;
 
+       
+
         // private Transform HeadTempTransform;
         // private Transform LContTempTransform;
         // private Transform RContTempTransform;
@@ -42,6 +44,11 @@ namespace VRLive.Runtime.Player
                     rController.localRotation = DecodeRotation(msg.values);
                     break;
             }
+        }
+
+        protected override void OnNewRawMocapData(VRTPData data)
+        {
+            return;
         }
 
         protected override void OnNewAudioData(VRTPData data)

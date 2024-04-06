@@ -5,17 +5,17 @@ namespace VRLive.Runtime.Player
 {
     public class AudienceManager : RemotePlayerController
     {
-        protected override void OnNewListenerData(object obj, VRTPPacket pkt)
-        {
-            // we're the audience -- we don't really care if there's any audio here.
-
-            PlayerMotionController player;
-            if (players.TryGetValue(pkt.UserID, out player))
-            {
-                player.OnListenerData(this, pkt);
-            }
-            
-        }
+        // protected void OnNewListenerData(object obj, VRTPPacket pkt)
+        // {
+        //     // we're the audience -- we don't really care if there's any audio here.
+        //
+        //     PlayerMotionController player;
+        //     if (players.TryGetValue(pkt.UserID, out player))
+        //     {
+        //         player.OnListenerData(this, pkt);
+        //     }
+        //     
+        // }
 
         public override void CreateNewPlayer(int userId, UserType usrType)
         {

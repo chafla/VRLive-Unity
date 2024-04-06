@@ -19,6 +19,8 @@ namespace VRLive.Runtime.Player
         
         private Parser _parser;
 
+        protected bool checkRawData = false;
+
         public virtual void Awake()
         {
             _parser = new Parser();
@@ -69,14 +71,23 @@ namespace VRLive.Runtime.Player
                    
                     var pos = 0;
                     Message res;
-                    // parse may add more than one message so make sure we purge em all
-                    _parser.Parse(msg.OSCBytes, ref pos, msg.OSCBytes.Length);
-                    
-                    
-                    while ((res = _parser.Dequeue()).address != "")  // see Message.none
+                    if (checkRawData)
                     {
-                        OnNewMocapData(res);
+                        OnNewRawMocapData(msg.OSC);
                     }
+                    else
+                    {
+                        // parse may add more than one message so make sure we purge em all
+                        _parser.Parse(msg.OSCBytes, ref pos, msg.OSCBytes.Length);
+                    
+                    
+                        while ((res = _parser.Dequeue()).address != "")  // see Message.none
+                        {
+                            OnNewMocapData(res);
+                        }
+                    }
+                    
+                    
                     
                     if (msg.AudioSize > 0)
                     {
@@ -96,6 +107,8 @@ namespace VRLive.Runtime.Player
         /// </summary>
         /// <param name="msg"></param>
         protected abstract void OnNewMocapData(Message msg);
+
+        protected abstract void OnNewRawMocapData(VRTPData data);
 
         /// <summary>
         /// Method called when we get new audio data from our queue.
