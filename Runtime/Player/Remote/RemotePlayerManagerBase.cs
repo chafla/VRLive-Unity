@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using RTP;
 using UnityEngine;
 using uOSC;
+using VRLive.Runtime.Utils;
 
 namespace VRLive.Runtime.Player
 {
@@ -20,7 +21,7 @@ namespace VRLive.Runtime.Player
 
         public string label;
 
-        public GameObject spawnPoint;
+        public SpawnPoint spawnPoint;
 
         
         [Header("If true, users of this type will spawn locally as their own representations.")]

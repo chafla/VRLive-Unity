@@ -43,6 +43,11 @@ namespace VRLive.Runtime.Player
             comp.userId = userId;
             players.Add(userId, comp);
             // newObj.SetActive(true);
+            
+            if (spawnPoint)
+            {
+                spawnPoint.MoveTo(newObj);
+            }
         }
 
         public override void RemovePlayer(int userId, UserType usrType)

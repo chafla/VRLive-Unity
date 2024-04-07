@@ -4,6 +4,7 @@ using System.Net;
 using JetBrains.Annotations;
 using RTP;
 using UnityEngine;
+using UnityEngine.Serialization;
 using VRLive.Runtime.Player;
 using VRLive.Runtime.Player.Local;
 
@@ -25,7 +26,7 @@ namespace VRLive.Runtime
         /// </summary>
         public string clientIdentifier;
 
-        public UserType userType;
+        [FormerlySerializedAs("userType")] public UserType localUserType;
 
         public ushort clientUserId;
 
@@ -82,7 +83,7 @@ namespace VRLive.Runtime
 
         public void Awake()
         {
-            HandshakeManager = new HandshakeManager(hostSettings.HandshakeEndPoint(), localPorts, userType, clientIdentifier);
+            HandshakeManager = new HandshakeManager(hostSettings.HandshakeEndPoint(), localPorts, localUserType, clientIdentifier);
             HandshakeManager.OnHandshakeCompletion += OnHandshakeSuccessEvent;
             HandshakeManager.RunHandshake();
         }
@@ -117,7 +118,7 @@ namespace VRLive.Runtime
             serverEventManager.Listener.label = "server event";
             serverEventManager.Listener.StartListener();
             
-            if (userType == UserType.Performer)
+            if (localUserType == UserType.Performer)
             {
                 // this one's a bit more dynamic
                 audioStreamer ??= gameObject.AddComponent<AudioStreamer>();
@@ -182,15 +183,19 @@ namespace VRLive.Runtime
         public void SpawnLocalPlayerHandler()
         {
             // todo diversify this to include support for either
-            var childComp = GetComponentInChildren<LocalPlayerManager>();
+            var childComp = gameObject.GetComponentInChildren<LocalPlayerManager>();
+            GameObject handler;
             if (!childComp)
             {
-                var handler = new GameObject("local player handler");
+                handler = new GameObject("local player handler");
                 handler.transform.parent = transform;
                 childComp = handler.AddComponent<LocalPlayerManager>();
             }
 
             localPlayerManager = childComp;
+            childComp.userType = localUserType;
+            
+            childComp.CreatePlayerModel();
             
             localPlayerManager.onHandshake(this);
             // localPlayerManager.oscServer.StartServer();

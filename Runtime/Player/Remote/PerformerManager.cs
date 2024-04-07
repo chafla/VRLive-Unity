@@ -68,8 +68,7 @@ namespace VRLive.Runtime.Player
             comp.userId = userId;
             if (spawnPoint)
             {
-                var spawnPos = spawnPoint.transform.localPosition;
-                newObj.transform.position = new Vector3(spawnPos.x, 1.0f, spawnPos.z);
+                spawnPoint.MoveTo(newObj);
             }
             
             players.Add(userId, comp);

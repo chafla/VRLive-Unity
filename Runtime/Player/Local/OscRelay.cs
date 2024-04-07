@@ -46,7 +46,8 @@ namespace VRLive.Runtime.Player.Local
 
         public void StartThreads()
         {
-            
+            Debug.Log($"Relay listening for incoming local mocap on {listeningPort}");
+            Debug.Log($"Relaying mocap onto {destIP}:{destPort}");
             _sendThread = new Thread(SendMocapDataThread);
             _listenThread = new Thread(RecvMocapDataThread);
             if (!_sendActive)

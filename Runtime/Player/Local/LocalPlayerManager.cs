@@ -8,23 +8,22 @@ using Unity.XR.CoreUtils;
 using UnityEngine;
 using uOSC;
 using VRLive.Runtime.Player.Local;
+using VRLive.Runtime.Utils;
 
 namespace VRLive.Runtime.Player
 {
     // [RequireComponent(typeof(uOscServer))]
     public class LocalPlayerManager : MonoBehaviour
     {
-        /// <summary>
-        /// Use the proper OSC server for what the player will be seeing/displayed as.
-        /// This, and by association its port, is where mocap should be sent to the client.
-        /// </summary>
-        // public uOscServer oscServer;
 
         /// <summary>
         /// Queue handling mocap that is headed out to the server.
         /// </summary>
         public ConcurrentQueue<Message> mocapOut;
 
+        /// <summary>
+        /// The point at which the user will be spawned.
+        /// </summary>
         public GameObject spawnPoint;
 
         /// <summary>
@@ -32,34 +31,37 @@ namespace VRLive.Runtime.Player
         /// For audience members, this should be the audience mocap port.
         /// For performers, it should be the performer mocap port.
         /// </summary>
-        public int localMocapToServerPort;
+        // public int localMocapToServerPort;
 
-        public int mocapInPort;
+        /// <summary>
+        /// The port that we will be getting mocap in from.
+        /// </summary>
+        // public int mocapInPort;
 
         /// <summary>
         /// The IP of the server.
         /// </summary>
-        public string serverHostIP;
+        // public string serverHostIP;
 
-        /// <summary>
-        /// The controller managing the motion of the local player.
-        /// </summary>
-        public LocalPlayerController controller;
+        public UserTypeConfig performerConfig;
+
+        public UserTypeConfig audienceConfig;
         
         /// <summary>
         /// The prefab to instantiate as the local user.
         /// </summary>
-        public GameObject localUserPrefab;
 
-        public LocalPerformerMotionController localUser;
+        public UserType userType;
+
+        public LocalPlayerMotionController localUser;
 
         private System.Threading.Thread _dispatchThread;
 
         public OscRelay relay;
+        
+        public bool hasHandshaked { get; protected set; }
 
-        private bool _active = false;
-
-        public bool hasHandshaked = false;
+        private bool _hasSpawnedPlayer = false;
 
         public HMDInputData inputData;
 
@@ -72,6 +74,8 @@ namespace VRLive.Runtime.Player
             relay.listeningPort = manager.slimeVrMocapInPort;
             relay.destPort = GetTargetMocapPort(manager.remotePorts);
             relay.destIP = manager.hostSettings.remoteIP;
+            
+            
             relay.StartThreads();
             hasHandshaked = true;
 
@@ -82,14 +86,10 @@ namespace VRLive.Runtime.Player
             }
         }
 
-        public virtual void OnData(Message msg)
-        {
-            mocapOut.Enqueue(msg);
-            // print(msg);
-        }
         
-        
-        
+        // I feel like I put a good bit of work on this, but it kinda feels like the relay does it better?
+        // leaving this here in case it was actually useful
+        /*
         public void SendMocapDataThread()
         {
             // TODO find a way to integrate controllers into this as well
@@ -147,13 +147,21 @@ namespace VRLive.Runtime.Player
                 }
             }
         }
+        */
         
         
-        public virtual int GetTargetMocapPort(ServerPortMap map)
+        public int GetTargetMocapPort(ServerPortMap map)
         {
-            // TODO OVERRIDE THIS
-            Debug.LogWarning("Using default audience mocap port for listener!!!!!!! don't forget this you asshole!!!!!!!");
-            return map.performer_mocap_in;
+            switch (userType)
+            {
+                case UserType.Audience:
+                    return map.audience_mocap_in;
+                case UserType.Performer:
+                    return map.performer_mocap_in;
+                default:
+                    Debug.LogWarning("Unknown user type, can't define target mocap port!");
+                    return -1;
+            }
         }
 
 
@@ -168,51 +176,96 @@ namespace VRLive.Runtime.Player
             // relay.StartThreads();
         }
 
-        public static void OnRelayMessage()
+        public UserTypeConfig GetConfig()
         {
-            
+            switch (userType)
+            {
+                case UserType.Audience:
+                    return audienceConfig;
+                
+                case UserType.Performer:
+                    return performerConfig;
+                
+                default:
+                    Debug.LogError("Invalid user type!");
+                    return null;
+                    
+            }
         }
 
         public virtual void CreatePlayerModel()
         {
-            var obj = Instantiate(localUserPrefab);
-            var playerController = obj.GetComponent<LocalPerformerMotionController>() ??
-                                   obj.AddComponent<LocalPerformerMotionController>();
-            
-           
-
-            // playerController.parent = this;
-            playerController.oscServer = obj.AddComponent<VRTPOscServer>();
-            playerController.oscRelay = relay;
-            playerController.manager = this;
-            
-            obj.SetActive(true);
-            
-            if (spawnPoint)
+            if (_hasSpawnedPlayer)
             {
-                var spawnPos = spawnPoint.transform.localPosition;
-                obj.transform.position = new Vector3(spawnPos.x, 1.0f, spawnPos.z);
+                Debug.LogWarning("Tried to spawn a player while one already exists!");
+                return;
+            }
+
+            UserTypeConfig cfg = GetConfig();
+
+            
+            var obj = Instantiate(cfg.prefab);
+
+            if (!obj)
+            {
+                Debug.LogError($"{this} has no prefab defined for {userType}!");
+                return;
+            }
+
+            
+            switch (userType)
+            {
+                case UserType.Performer:
+                    var perfController = obj.GetComponent<LocalPerformerMotionController>() ??
+                                         obj.AddComponent<LocalPerformerMotionController>();
+                    perfController.oscServer = obj.AddComponent<VRTPOscServer>();
+                    localUser = perfController;
+                    break;
+                
+                case UserType.Audience:
+                    localUser = obj.GetComponent<LocalAudienceMotionController>() ??
+                                obj.AddComponent<LocalAudienceMotionController>();
+                    break;
+                default:
+                    Debug.LogError($"Could not create local player model: invalid user type {userType}!");
+                    return;
             }
 
 
-            localUser = playerController;
+            localUser.oscRelay = relay;
+            localUser.manager = this;
+            
+            
+            
+            obj.SetActive(true);
+            
+            if (cfg.spawnPoint)
+            {
+                cfg.spawnPoint.MoveTo(obj);
+            }
+
+            _hasSpawnedPlayer = true;
         }
 
-        public void OnDisable()
-        {
-            _active = false;
-        }
 
         public void OnEnable()
         {
             // oscServer = GetComponent<uOscServer>();
             // oscServer.onDataReceived.AddListener(OnData);
 
-            _dispatchThread = new System.Threading.Thread(SendMocapDataThread);
-            _active = true;
-            _dispatchThread.Start();
+            // _dispatchThread = new System.Threading.Thread(SendMocapDataThread);
+            // _active = true;
+            // _dispatchThread.Start();
             
-            CreatePlayerModel();
+            // CreatePlayerModel();
         }
+    }
+
+    [Serializable]
+    public class UserTypeConfig
+    {
+        public GameObject prefab;
+
+        public SpawnPoint spawnPoint;
     }
 }
