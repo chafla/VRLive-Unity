@@ -7,6 +7,8 @@ namespace VRLive.Runtime.Player.Local
     public abstract class LocalPlayerMotionController : MonoBehaviour
     {
         public LocalPlayerManager manager;
+
+        public float eyeYOffset;
         
         /// <summary>
         /// Our OSC relay. Should be set on handshake.

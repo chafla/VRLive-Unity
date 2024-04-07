@@ -234,6 +234,7 @@ namespace VRLive.Runtime.Player
 
             localUser.oscRelay = relay;
             localUser.manager = this;
+            localUser.eyeYOffset = cfg.eyeYOffset;
             
             
             
@@ -267,5 +268,7 @@ namespace VRLive.Runtime.Player
         public GameObject prefab;
 
         public SpawnPoint spawnPoint;
+
+        public float eyeYOffset;
     }
 }
