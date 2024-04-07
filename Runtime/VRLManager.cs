@@ -62,7 +62,7 @@ namespace VRLive.Runtime
 
         public PerformerManager performerManager;
 
-        public RemotePlayerController remotePlayerController;
+        // public Motion remotePlayerController;
 
         public LocalPlayerManager localPlayerManager;
         
@@ -191,13 +191,8 @@ namespace VRLive.Runtime
             }
 
             localPlayerManager = childComp;
-            var relay = localPlayerManager.gameObject.AddComponent<OscRelay>();
-            localPlayerManager.relay = relay;
-            // safe to do here since it's post handshake
-            localPlayerManager.relay.listeningPort = slimeVrMocapInPort;
-            localPlayerManager.relay.destPort = localPlayerManager.GetTargetMocapPort(remotePorts);
-            localPlayerManager.relay.destIP = hostSettings.remoteIP;
-            localPlayerManager.onHandshake();
+            
+            localPlayerManager.onHandshake(this);
             // localPlayerManager.oscServer.StartServer();
         }
 

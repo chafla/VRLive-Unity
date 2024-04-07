@@ -10,7 +10,7 @@ namespace VRLive.Runtime.Player
     /// Controller managing instances of one type of client player.
     /// </summary>
     // [RequireComponent(typeof(RTPListener))]
-    public abstract class RemotePlayerController : MonoBehaviour
+    public abstract class RemotePlayerManagerBase : MonoBehaviour
     {
         public RTPListener listener;
 
@@ -20,9 +20,30 @@ namespace VRLive.Runtime.Player
 
         public string label;
 
+        public GameObject spawnPoint;
+
         
         [Header("If true, users of this type will spawn locally as their own representations.")]
         public bool acceptLocalUser = true;
+
+        public ServerEventManager manager;
+
+        /// <summary>
+        /// Map of user ID to players
+        /// </summary>
+        public Dictionary<int, PlayerMotionController> players = new Dictionary<int, PlayerMotionController>();
+
+        public GameObject baseModel;
+
+        
+        /// <summary>
+        /// The root that VMC should be told is our root component for transforms.
+        /// This is probably not the game object, but instead the first bone in the hierarchy/the mesh.
+        /// This ensures that we can still move the game object itself even while the externalmanager takes control of
+        /// the local manipulations.
+        /// </summary>
+        public Transform baseModelTransformRoot;
+
 
         public ushort listenPort
         {
@@ -41,16 +62,6 @@ namespace VRLive.Runtime.Player
             }
 
         }
-
-        public ServerEventManager manager;
-
-        /// <summary>
-        /// Map of user ID to players
-        /// </summary>
-        public Dictionary<int, PlayerMotionController> players = new Dictionary<int, PlayerMotionController>();
-
-        public GameObject baseModel;
-
 
         
         public virtual void Awake()

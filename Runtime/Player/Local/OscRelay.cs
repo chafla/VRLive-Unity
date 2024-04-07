@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using RTP;
 using UnityEngine;
 using uOSC;
 using Thread = System.Threading.Thread;
@@ -12,7 +13,7 @@ namespace VRLive.Runtime.Player.Local
 {
     public class OscRelay : MonoBehaviour
     {
-        public event EventHandler<byte[]> OnNewMessage;
+        public event EventHandler<VRTPData> OnNewMessage;
 
         public int listeningPort;
         public int destPort;
@@ -25,6 +26,8 @@ namespace VRLive.Runtime.Player.Local
 
         private bool _listenActive = false;
         private Thread _listenThread;
+
+        public Transform rootTransform;
         
         private static byte[] _bundleIntro = Encoding.UTF8.GetBytes("#bundle");
 
@@ -89,9 +92,9 @@ namespace VRLive.Runtime.Player.Local
 
                     continue;
                 }
-                
-                
-                OnNewMessage?.Invoke(this, buf[..bytesIn]);
+
+                var vrtpData = new VRTPData((ushort) bytesIn, buf[..bytesIn], 0);
+                OnNewMessage?.Invoke(this, vrtpData);
                 incomingData.Enqueue(buf[..bytesIn]);
             }
             
@@ -159,6 +162,15 @@ namespace VRLive.Runtime.Player.Local
             }
             
             Debug.LogWarning("Could not find a #bundle tag in parsed OSC message.");
+            
+        }
+
+        /// <summary>
+        /// SlimeVR doesn't transfer HMD info, like the head.
+        /// As a result, we need to make sure we pass that along.
+        /// </summary>
+        public void InjectRootTransform()
+        {
             
         }
         

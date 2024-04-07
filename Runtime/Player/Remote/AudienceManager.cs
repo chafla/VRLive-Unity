@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace VRLive.Runtime.Player
 {
-    public class AudienceManager : RemotePlayerController
+    public class AudienceManager : RemotePlayerManagerBase
     {
         // protected void OnNewListenerData(object obj, VRTPPacket pkt)
         // {
@@ -36,11 +36,13 @@ namespace VRLive.Runtime.Player
             }
             
             var newObj = Instantiate(baseModel);
+            newObj.SetActive(true);
             newObj.transform.position = Vector3.zero;
             var comp = newObj.GetComponent<AudienceMotionController>() ?? newObj.AddComponent<AudienceMotionController>();
             comp.parent = this;
             comp.userId = userId;
             players.Add(userId, comp);
+            // newObj.SetActive(true);
         }
 
         public override void RemovePlayer(int userId, UserType usrType)

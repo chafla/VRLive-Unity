@@ -5,7 +5,7 @@ using VRM;
 
 namespace VRLive.Runtime.Player
 {
-    public class PerformerManager : RemotePlayerController
+    public class PerformerManager : RemotePlayerManagerBase
     {
 
         
@@ -19,26 +19,8 @@ namespace VRLive.Runtime.Player
         // public VRTPOscServer oscServer;
 
         public RTPAudioListenerComponentized audioListener;
-
-        // public RTPListener RtpListener;
-
-        // public int ServerPort;
-
-        public override void Awake()
-        {
-            base.Awake();
-            
-            // rtpListener ??= gameObject.AddComponent<RTPListener>();
-            // rtpListener.listeningPort = localPorts.vrtp_data;
-            // rtpListener.StartServer();
-            
-
-            // these both rely on the rtp listener
-            // oscServer ??= gameObject.AddComponent<VRTPOscServer>();
-            // rtpAudioListener ??= gameObject.AddComponent<RTPAudioListenerComponentized>();
-
-        }
-
+        
+        
         public override void OnEnable()
         {
             base.OnEnable();
@@ -79,10 +61,17 @@ namespace VRLive.Runtime.Player
             }
             
             var newObj = Instantiate(baseModel);
-            newObj.transform.position = Vector3.zero;
+            // newObj.transform.position = Vector3.zero;
             var comp = newObj.GetComponent<PerformerMotionController>() ?? newObj.AddComponent<PerformerMotionController>();
+            newObj.SetActive(true);
             comp.parent = this;
             comp.userId = userId;
+            if (spawnPoint)
+            {
+                var spawnPos = spawnPoint.transform.localPosition;
+                newObj.transform.position = new Vector3(spawnPos.x, 1.0f, spawnPos.z);
+            }
+            
             players.Add(userId, comp);
         }
 

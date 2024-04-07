@@ -1,5 +1,7 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using RTP;
+using Unity.VisualScripting;
 using UnityEngine;
 using uOSC;
 
@@ -11,13 +13,15 @@ namespace VRLive.Runtime.Player
     /// </summary>
     public abstract class PlayerMotionController : MonoBehaviour
     {
-        public RemotePlayerController parent;
+        public RemotePlayerManagerBase parent;
 
         public int userId;
 
         public ConcurrentQueue<VRTPPacket> messages;
         
         private Parser _parser;
+
+        public bool ready;
 
         protected bool checkRawData = false;
 
@@ -61,7 +65,7 @@ namespace VRLive.Runtime.Player
 
         }
 
-        public void Update()
+        public virtual void Update()
         {
             VRTPPacket msg;
             // var now = DateTime.Now;

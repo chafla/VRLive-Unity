@@ -1,6 +1,7 @@
 ﻿using System;
 using EVMC4U;
 using RTP;
+using UnityEngine;
 using uOSC;
 
 namespace VRLive.Runtime.Player
@@ -11,21 +12,54 @@ namespace VRLive.Runtime.Player
 
         public VRTPOscServer server;
 
+        public bool _waitingOnParent;
+
+        private bool _usingTfMarker;
+
+        // public PerformerManager manager;
+
         public override void Awake()
         {
             base.Awake();
-            server ??= gameObject.AddComponent<VRTPOscServer>();
-            vmcHandler ??= gameObject.GetComponent<ExternalReceiver>();
-            vmcHandler ??= gameObject.AddComponent<ExternalReceiver>();
-            
+            var obj = gameObject;
+            server ??= obj.AddComponent<VRTPOscServer>();
+            vmcHandler ??= obj.GetComponent<ExternalReceiver>();
+            vmcHandler ??= obj.AddComponent<ExternalReceiver>();
+            vmcHandler.Model = obj;
 
+            var transformMarker = gameObject.GetComponentInChildren<PrefabTransformMarker>();
+            if (transformMarker)
+            {
+                Debug.Log("Using transform marker, ignoring that found in parent.");
+                var tf = transformMarker.gameObject.transform;
+                vmcHandler.RootPositionTransform = tf;
+                vmcHandler.RootRotationTransform = tf;
+            }
+            
             checkRawData = true;
 
+        }
+
+        public override void Update()
+        {
+            // ignore the expensiveness
+            if (_waitingOnParent && parent != null)
+            {
+                vmcHandler.RootPositionTransform = parent.baseModelTransformRoot;
+                vmcHandler.RootRotationTransform = parent.baseModelTransformRoot;
+                vmcHandler.Model = gameObject;
+                _waitingOnParent = false;
+            }
+            // print("a");
+            base.Update();
         }
 
         public void OnEnable()
         {
             vmcHandler.Model = gameObject;
+            // vmcHandler.RootPositionTransform = parent.baseModelTransformRoot;
+            // vmcHandler.RootRotationTransform = parent.baseModelTransformRoot;
+            // 
             // server.StartServer();
         }
 

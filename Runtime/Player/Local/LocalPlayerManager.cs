@@ -3,6 +3,8 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using RTP;
+using Unity.XR.CoreUtils;
 using UnityEngine;
 using uOSC;
 using VRLive.Runtime.Player.Local;
@@ -22,6 +24,8 @@ namespace VRLive.Runtime.Player
         /// Queue handling mocap that is headed out to the server.
         /// </summary>
         public ConcurrentQueue<Message> mocapOut;
+
+        public GameObject spawnPoint;
 
         /// <summary>
         /// The server that we want to send our mocap to.
@@ -47,15 +51,35 @@ namespace VRLive.Runtime.Player
         /// </summary>
         public GameObject localUserPrefab;
 
+        public LocalPerformerMotionController localUser;
+
         private System.Threading.Thread _dispatchThread;
 
         public OscRelay relay;
 
         private bool _active = false;
 
-        public void onHandshake()
+        public bool hasHandshaked = false;
+
+        public HMDInputData inputData;
+
+        public XROrigin xrOrigin;
+
+        public void onHandshake(VRLManager manager)
         {
+            
+            // safe to do here since it's post handshake
+            relay.listeningPort = manager.slimeVrMocapInPort;
+            relay.destPort = GetTargetMocapPort(manager.remotePorts);
+            relay.destIP = manager.hostSettings.remoteIP;
             relay.StartThreads();
+            hasHandshaked = true;
+
+            if (localUser)
+            {
+                localUser.oscRelay = relay;
+                localUser.OnHandshake();
+            }
         }
 
         public virtual void OnData(Message msg)
@@ -137,9 +161,41 @@ namespace VRLive.Runtime.Player
         {
             mocapOut = new ConcurrentQueue<Message>();
             // _active = false;
-            relay = GetComponent<OscRelay>() ?? gameObject.AddComponent<OscRelay>();
+            relay = gameObject.GetComponent<OscRelay>();
+            inputData = gameObject.AddComponent<HMDInputData>();
+            relay = gameObject.GetComponent<OscRelay>() ?? gameObject.AddComponent<OscRelay>();
             // relay.listeningPort = mocapInPort;
             // relay.StartThreads();
+        }
+
+        public static void OnRelayMessage()
+        {
+            
+        }
+
+        public virtual void CreatePlayerModel()
+        {
+            var obj = Instantiate(localUserPrefab);
+            var playerController = obj.GetComponent<LocalPerformerMotionController>() ??
+                                   obj.AddComponent<LocalPerformerMotionController>();
+            
+           
+
+            // playerController.parent = this;
+            playerController.oscServer = obj.AddComponent<VRTPOscServer>();
+            playerController.oscRelay = relay;
+            playerController.manager = this;
+            
+            obj.SetActive(true);
+            
+            if (spawnPoint)
+            {
+                var spawnPos = spawnPoint.transform.localPosition;
+                obj.transform.position = new Vector3(spawnPos.x, 1.0f, spawnPos.z);
+            }
+
+
+            localUser = playerController;
         }
 
         public void OnDisable()
@@ -155,6 +211,8 @@ namespace VRLive.Runtime.Player
             _dispatchThread = new System.Threading.Thread(SendMocapDataThread);
             _active = true;
             _dispatchThread.Start();
+            
+            CreatePlayerModel();
         }
     }
 }
