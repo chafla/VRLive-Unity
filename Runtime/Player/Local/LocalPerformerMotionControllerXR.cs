@@ -54,46 +54,5 @@ namespace VRLive.Runtime.Player.Local
             // throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// Take our current controller and HMD values and package them up as slimeVR data
-        /// </summary>
-        /// <returns></returns>
-        public VRTPData PackageOSCData()
-        {
-            
-            var bundle = new Bundle(Timestamp.Now);
-            
-            // assuming the head is at the origin, get the values based on that
-            
-            var originHeadPosition = manager.xrOrigin.CameraInOriginSpacePos;
-
-            var originHeadRotation = Quaternion.Inverse(manager.xrOrigin.Origin.transform.rotation) *
-                                     manager.xrOrigin.Camera.transform.rotation;
-            
-            // following the same transformation done to get the camera in terms of origin space
-
-            var originLHandPosition =
-                manager.xrOrigin.Origin.transform.InverseTransformPoint(manager.leftHandController.transform.position);
-            
-            var originRHandPosition =
-                manager.xrOrigin.Origin.transform.InverseTransformPoint(manager.rightHandController.transform.position);
-            
-            
-
-            var headPosMessage = new Message("/tracking/trackers/head/position",
-                new object[] { originHeadPosition.x, originHeadPosition.y, originHeadPosition.z });
-            
-            bundle.Add(headPosMessage);
-            
-            var headRotMessage = new Message("/tracking/trackers/head/rotation",
-                new object[] { originHeadRotation.x, originHeadRotation.y, originHeadRotation.z, originHeadRotation.w });
-            
-            // TODO fill in the rest of the data
-    
-            bundle.Add(headRotMessage);
-            
-            return VRTPData.FromBundle(bundle, manager.userId);
-            
-        }
     }
 }

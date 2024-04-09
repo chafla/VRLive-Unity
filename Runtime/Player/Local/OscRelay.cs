@@ -19,7 +19,7 @@ namespace VRLive.Runtime.Player.Local
         public int destPort;
         public string destIP;
 
-        public ConcurrentQueue<VRTPData> incomingData;
+        protected ConcurrentQueue<VRTPData> incomingData;
 
         private bool _sendActive = false;
         private Thread _sendThread;
@@ -38,8 +38,11 @@ namespace VRLive.Runtime.Player.Local
         /// This should be a relatively inexpensive operation, as it requires little parsing.
         /// </summary>
         public bool shouldInjectTimestamp = true;
-        
-        
+
+        public void Enqueue(VRTPData data)
+        {
+            incomingData.Enqueue(data);
+        }
         
         public void Awake()
         {

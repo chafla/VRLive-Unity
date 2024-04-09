@@ -44,6 +44,15 @@ namespace VRLive.Runtime.Player
                 case "/tracking/trackers/2/rotation":
                     rController.localRotation = SlimeVRMessageProcessor.DecodeRotation(msg.values);
                     break;
+                
+                // these don't come from slimevr, but are instead passed by our application.
+                case "/tracking/root/position":
+                    transform.position = SlimeVRMessageProcessor.DecodePosition(msg.values);
+                    break;
+                
+                case "/tracking/root/rotation":
+                    transform.rotation = SlimeVRMessageProcessor.DecodeRotation(msg.values);
+                    break;
             }
         }
 
