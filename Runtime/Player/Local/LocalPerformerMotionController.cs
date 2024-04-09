@@ -15,7 +15,7 @@ namespace VRLive.Runtime.Player.Local
         public VRTPOscServer oscServer;
         // private bool hasHandshaked;
         
-        public void Awake()
+        public virtual void Awake()
         {
             vmcHandler ??= gameObject.GetComponent<ExternalReceiver>() ?? gameObject.AddComponent<ExternalReceiver>();
             vmcHandler.Model = gameObject;

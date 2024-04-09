@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using RTP;
 using Unity.XR.CoreUtils;
 using UnityEngine;
+using UnityEngine.InputSystem.XR;
 using uOSC;
 using VRLive.Runtime.Player.Local;
 using VRLive.Runtime.Utils;
@@ -53,6 +54,8 @@ namespace VRLive.Runtime.Player
 
         public UserType userType;
 
+        public ushort userId;
+
         public LocalPlayerMotionController localUser;
 
         private System.Threading.Thread _dispatchThread;
@@ -67,6 +70,11 @@ namespace VRLive.Runtime.Player
 
         public XROrigin xrOrigin;
 
+        // these are trackedposedrivers because we need to know that they're directly tracking the objects.
+        public GameObject leftHandController;
+
+        public GameObject rightHandController;
+
         public void onHandshake(VRLManager manager)
         {
             
@@ -74,6 +82,11 @@ namespace VRLive.Runtime.Player
             relay.listeningPort = manager.slimeVrMocapInPort;
             relay.destPort = GetTargetMocapPort(manager.remotePorts);
             relay.destIP = manager.hostSettings.remoteIP;
+            
+            // TODO
+            // call messageDaisyChain in externalreceiver to smuggle new head data in 
+            // and/or add new externalreceiver daisy chain that takes in messages and updates the position
+            // BUT we probably need to filter head data out 
             
             
             relay.StartThreads();

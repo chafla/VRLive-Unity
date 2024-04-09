@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Buffers.Binary;
+using System.IO;
+using uOSC;
 
 namespace RTP
 {
@@ -49,6 +51,15 @@ namespace RTP
             Payload = data;
             UserID = userID;
             Arrived = DateTime.Now;
+        }
+
+        public static VRTPData FromBundle(Bundle bundle, ushort userId)
+        {
+            var stream = new MemoryStream();
+            bundle.Write(stream);
+            var buf = stream.GetBuffer();
+            var data = new VRTPData((ushort) buf.Length, buf, userId);
+            return data;
         }
     }
     

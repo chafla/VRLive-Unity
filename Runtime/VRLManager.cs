@@ -194,7 +194,7 @@ namespace VRLive.Runtime
 
             localPlayerManager = childComp;
             childComp.userType = localUserType;
-            
+            childComp.userId = clientUserId;
             childComp.CreatePlayerModel();
             
             localPlayerManager.onHandshake(this);

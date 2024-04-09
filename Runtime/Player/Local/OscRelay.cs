@@ -19,7 +19,7 @@ namespace VRLive.Runtime.Player.Local
         public int destPort;
         public string destIP;
 
-        public ConcurrentQueue<byte[]> incomingData;
+        public ConcurrentQueue<VRTPData> incomingData;
 
         private bool _sendActive = false;
         private Thread _sendThread;
@@ -28,6 +28,8 @@ namespace VRLive.Runtime.Player.Local
         private Thread _listenThread;
 
         public Transform rootTransform;
+
+        private Parser _parser;
         
         private static byte[] _bundleIntro = Encoding.UTF8.GetBytes("#bundle");
 
@@ -41,7 +43,8 @@ namespace VRLive.Runtime.Player.Local
         
         public void Awake()
         {
-            incomingData = new ConcurrentQueue<byte[]>();
+            incomingData = new ConcurrentQueue<VRTPData>();
+            _parser = new Parser();
         }
 
         public void StartThreads()
@@ -96,7 +99,7 @@ namespace VRLive.Runtime.Player.Local
 
                 var vrtpData = new VRTPData((ushort) bytesIn, buf[..bytesIn], 0);
                 OnNewMessage?.Invoke(this, vrtpData);
-                incomingData.Enqueue(buf[..bytesIn]);
+                incomingData.Enqueue(vrtpData);
             }
             
         }
@@ -104,17 +107,17 @@ namespace VRLive.Runtime.Player.Local
         /// <summary>
         /// Inject a timestamp into the first (and hopefully top-level) OSC bundle.
         /// </summary>
-        public void injectTimestamp(byte[] data)
+        public void injectTimestamp(VRTPData data)
         {
             // how far to look for our bundle before giving up
             var maxBytesToSearch = 50;
             var noTimestamp = true;
             var noInnerTimestamp = false;
-            for (int i = 0; i < data.Length - _bundleIntro.Length && i < maxBytesToSearch; i++)
+            for (int i = 0; i < data.PayloadSize - _bundleIntro.Length && i < maxBytesToSearch; i++)
             {
                 for (int j = 0; j < _bundleIntro.Length; j++)
                 {
-                    if (data[i + j] != _bundleIntro[j])
+                    if (data.Payload[i + j] != _bundleIntro[j])
                     {
                         noInnerTimestamp = true;
                         break;
@@ -155,8 +158,8 @@ namespace VRLive.Runtime.Player.Local
                     Array.Reverse(totalSecsBytes);
                 }
                 
-                Array.Copy(totalSecsBytes, 0, data, timetagPos, totalSecsBytes.Length);
-                Array.Copy(fracSecsBytes, 0, data, timetagPos + 4, fracSecsBytes.Length);
+                Array.Copy(totalSecsBytes, 0, data.Payload, timetagPos, totalSecsBytes.Length);
+                Array.Copy(fracSecsBytes, 0, data.Payload, timetagPos + 4, fracSecsBytes.Length);
                 return;
 
 
@@ -169,11 +172,31 @@ namespace VRLive.Runtime.Player.Local
         /// <summary>
         /// SlimeVR doesn't transfer HMD info, like the head.
         /// As a result, we need to make sure we pass that along.
+        /// This may be a bit expensive, but it's annoyingly kinda necessary if we want to be detached from SteamVR.
         /// </summary>
-        public void InjectRootTransform()
-        {
-            
-        }
+        // public byte[] InjectRootTransform(VRTPData data)
+        // {
+        //     int pos = 0;
+        //     _parser.Parse(data.Payload, ref pos, data.PayloadSize);
+        //     Message msg;
+        //     while ((msg = _parser.Dequeue()).address != "")
+        //     {
+        //         // vmc format from slimevr
+        //         if (msg.address == "/VMC/Ext/Root/Pos")
+        //         {
+        //             
+        //         }
+        //         else if (msg.address == "/VMC/Ext/Root/Bone")
+        //         {
+        //             // catch the head bone!
+        //         }
+        //         // base slimevr osc format
+        //         else if (msg.address.StartsWith("/tracking"))
+        //         {
+        //             
+        //         }
+        //     }
+        // }
         
         public void SendMocapDataThread()
         {
@@ -184,7 +207,7 @@ namespace VRLive.Runtime.Player.Local
             while (_sendActive)
             {
                 var endpoint = new IPEndPoint(IPAddress.Parse(destIP), destPort);
-                byte[] data;
+                VRTPData data;
                 while (incomingData.TryDequeue(out data))
                 {
                     if (shouldInjectTimestamp)
@@ -196,7 +219,7 @@ namespace VRLive.Runtime.Player.Local
                     
                     // todo if this breaks try sending them individually, but I think bundling them up makes more sense?
                     // Bundle b = new Bundle();
-                    socket.SendTo(data, endpoint);
+                    socket.SendTo(data.Payload, endpoint);
                     // b.Add(msg);
                     //
                     // if (++messagesInCurBundle >= maxMessagesPerBundle)
