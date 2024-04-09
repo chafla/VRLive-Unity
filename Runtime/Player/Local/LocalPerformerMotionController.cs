@@ -10,13 +10,14 @@ namespace VRLive.Runtime.Player.Local
     public class LocalPerformerMotionController : LocalPlayerMotionController
     {
         public ExternalReceiver vmcHandler;
-        public VRMHMDTracker hmdManager;
+        // public VRMHMDTracker hmdManager;
         
         public VRTPOscServer oscServer;
         // private bool hasHandshaked;
         
-        public virtual void Awake()
+        public override void Awake()
         {
+            base.Awake();
             vmcHandler ??= gameObject.GetComponent<ExternalReceiver>() ?? gameObject.AddComponent<ExternalReceiver>();
             vmcHandler.Model = gameObject;
 

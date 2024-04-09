@@ -75,6 +75,12 @@ namespace VRLive.Runtime.Player
 
         public GameObject rightHandController;
 
+        public string slimeVRHost;
+
+        public int slimeVrVrcMocapInPort;
+
+        public int slimeVrVrmMocapInPort;
+
         public void onHandshake(VRLManager manager)
         {
             

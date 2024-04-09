@@ -29,7 +29,7 @@ namespace VRLive.Runtime.Player.Local
 
         public Transform rootTransform;
 
-        private Parser _parser;
+        protected Parser _parser;
         
         private static byte[] _bundleIntro = Encoding.UTF8.GetBytes("#bundle");
 
@@ -200,6 +200,11 @@ namespace VRLive.Runtime.Player.Local
         //         }
         //     }
         // }
+
+        public virtual void ProcessData(ref VRTPData data)
+        {
+            return;
+        }
         
         public void SendMocapDataThread()
         {
@@ -217,6 +222,7 @@ namespace VRLive.Runtime.Player.Local
                     {
                        injectTimestamp(data);
                     }
+                    ProcessData(ref data);
                     
                     // we don't need to fu
                     
