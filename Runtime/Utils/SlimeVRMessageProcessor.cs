@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using EVMC4U;
+using UnityEngine;
 
 namespace VRLive.Runtime.Utils
 {
@@ -32,6 +33,76 @@ namespace VRLive.Runtime.Utils
 
             return new Quaternion(x, y, z, w);
 
+        }
+        
+        public static void DisableDefaultCutBones(ExternalReceiver vmcHandler)
+        {
+            // these bones are cut by default on a new instance of the handler which is Really Annoying
+            // make sure they're disabled for our purposes
+            vmcHandler.CutBoneHips = false;
+            vmcHandler.CutBoneSpine = false;
+            vmcHandler.CutBoneChest = false;
+            vmcHandler.CutBoneUpperChest = false;
+
+            vmcHandler.CutBoneLeftUpperLeg = false;
+            vmcHandler.CutBoneLeftLowerLeg = false;
+            vmcHandler.CutBoneLeftFoot = false;
+            vmcHandler.CutBoneLeftToes = false;
+
+            vmcHandler.CutBoneRightUpperLeg = false;
+            vmcHandler.CutBoneRightLowerLeg = false;
+            vmcHandler.CutBoneRightFoot = false;
+            vmcHandler.CutBoneRightToes = false;
+        }
+
+        public static void CutUnnecessaryBones(ExternalReceiver vmcHandler)
+        {
+            vmcHandler.CutBonesEnable = true;
+            
+            // argghhhhhh I don't know if this is all necessary but it's better to be safe than sorry
+
+            // vmcHandler.CutBoneLeftHand = true;
+            // vmcHandler.CutBoneRightHand = true;
+            
+            vmcHandler.CutBoneRightThumbProximal = true;
+            vmcHandler.CutBoneRightThumbIntermediate = true;
+            vmcHandler.CutBoneRightThumbDistal = true;
+
+            vmcHandler.CutBoneRightIndexProximal = true;
+            vmcHandler.CutBoneRightIndexIntermediate = true;
+            vmcHandler.CutBoneRightIndexDistal = true;
+
+            vmcHandler.CutBoneRightMiddleProximal = true;
+            vmcHandler.CutBoneRightMiddleIntermediate = true;
+            vmcHandler.CutBoneRightMiddleDistal = true;
+
+            vmcHandler.CutBoneRightRingProximal = true;
+            vmcHandler.CutBoneRightRingIntermediate = true;
+            vmcHandler.CutBoneRightRingDistal = true;
+
+            vmcHandler.CutBoneRightLittleProximal = true;
+            vmcHandler.CutBoneRightLittleIntermediate = true;
+            vmcHandler.CutBoneRightLittleDistal = true;
+            
+            vmcHandler.CutBoneLeftThumbProximal = true;
+            vmcHandler.CutBoneLeftThumbIntermediate = true;
+            vmcHandler.CutBoneLeftThumbDistal = true;
+
+            vmcHandler.CutBoneLeftIndexProximal = true;
+            vmcHandler.CutBoneLeftIndexIntermediate = true;
+            vmcHandler.CutBoneLeftIndexDistal = true;
+
+            vmcHandler.CutBoneLeftMiddleProximal = true;
+            vmcHandler.CutBoneLeftMiddleIntermediate = true;
+            vmcHandler.CutBoneLeftMiddleDistal = true;
+
+            vmcHandler.CutBoneLeftRingProximal = true;
+            vmcHandler.CutBoneLeftRingIntermediate = true;
+            vmcHandler.CutBoneLeftRingDistal = true;
+
+            vmcHandler.CutBoneLeftLittleProximal = true;
+            vmcHandler.CutBoneLeftLittleIntermediate = true;
+            vmcHandler.CutBoneLeftLittleDistal = true;
         }
 
     }

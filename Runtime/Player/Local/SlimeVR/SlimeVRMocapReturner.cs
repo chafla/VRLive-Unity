@@ -162,6 +162,19 @@ namespace VRLive.Runtime.Player.Local.SlimeVR
                 // LController = lController;
                 // RController = rController;
             }
+            
+            public MocapData(Transform head, Vector3 lControllerPos, Quaternion lControllerRot, Vector3 rControllerPos, Quaternion rControllerRot)
+            {
+                HeadPos = head.position;
+                HeadRot = head.rotation;
+                LControllerPos = lControllerPos;
+                LControllerRot = lControllerRot;
+
+                RControllerPos = rControllerPos;
+                RControllerRot = rControllerRot;
+                // LController = lController;
+                // RController = rController;
+            }
 
             public bool PosHasRot = false;
 

@@ -54,17 +54,24 @@ namespace VRLive.Runtime
             // {
 
             var maxTimeout = 64000;  // 64s
+            var maxRetries = 15;
             socket.SendTimeout = socket.ReceiveTimeout = 1000;  // 1s
-            try
+            for (int i = 0; i < maxRetries; i++)
             {
-                socket.Connect(ServerEndpoint);
+                try
+                {
+                    socket.Connect(ServerEndpoint);
+                    break;
+                }
+                catch (SocketException e)
+                {
+                    Debug.LogError($"Failed to connect to {ServerEndpoint} during handshake. Retrying again shortly.");
+                    socket.SendTimeout = Math.Min(2 * socket.SendTimeout, maxTimeout);
+                    socket.ReceiveTimeout *= Math.Min(2 * socket.ReceiveTimeout, maxTimeout);
+                    Thread.Sleep(socket.SendTimeout);
+                }
             }
-            catch (SocketException e)
-            {
-                Debug.LogError($"Failed to connect during handshake. Retrying again shortly.");
-                socket.SendTimeout = Math.Min(2 * socket.SendTimeout, maxTimeout);
-                socket.ReceiveTimeout *= Math.Min(2 * socket.ReceiveTimeout, maxTimeout);
-            }
+            
 
             Debug.LogWarning($"Established new handshake connection with {ServerEndpoint}");
                 var buf = new byte[1024];

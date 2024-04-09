@@ -75,7 +75,27 @@ namespace VRLive.Runtime.Player.Local
 
             if (returner)
             {
-                returner.mocapDataIn.Enqueue(new SlimeVRMocapReturner.MocapData(manager.xrOrigin.Camera.gameObject.transform, manager.leftHandController.transform, manager.rightHandController.transform));
+                // controllers (at least mine) seem to come in at what slimeVR interprets as an offset.
+                // its "flat" value is somewhat off from what we expect to see.
+                // for my controllers, it works out to be x=90, y=180, z=0.
+                // yes this may cause gimbal lock because euler angles kinda suck but this is only here, so shhh
+                var controllerRotationOffset = Quaternion.Euler(manager.ControllerRotationXOffset, manager.ControllerRotationYOffset, manager.ControllerRotationZOffset);
+                var lControllerTf = manager.leftHandController.transform;
+                var rControllerTf = manager.rightHandController.transform;
+                var lConPos = lControllerTf.position;
+                var lConRot =lControllerTf.rotation * controllerRotationOffset;
+                var rConPos = rControllerTf.position;
+                var rConRot = rControllerTf.rotation * controllerRotationOffset;
+                
+                var mocapData = new SlimeVRMocapReturner.MocapData(
+                    // head is fine though
+                    manager.xrOrigin.Camera.gameObject.transform,
+                    lConPos,
+                    lConRot,
+                    rConPos,
+                    rConRot
+                );
+                returner.mocapDataIn.Enqueue(mocapData);
             }
             
             

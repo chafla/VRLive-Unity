@@ -5,6 +5,7 @@ using JetBrains.Annotations;
 using RTP;
 using UnityEngine;
 using UnityEngine.Serialization;
+using UnityEngine.XR.Management;
 using VRLive.Runtime.Player;
 using VRLive.Runtime.Player.Local;
 
@@ -86,6 +87,16 @@ namespace VRLive.Runtime
             HandshakeManager = new HandshakeManager(hostSettings.HandshakeEndPoint(), localPorts, localUserType, clientIdentifier);
             HandshakeManager.OnHandshakeCompletion += OnHandshakeSuccessEvent;
             HandshakeManager.RunHandshake();
+            
+            // https://forum.unity.com/threads/manual-openxr-load-with-unity-input-system-not-working.1075966/
+            // force restart the xr manager, it doesn't always get shut down properly
+            if( XRGeneralSettings.Instance.Manager.activeLoader != null ){
+                XRGeneralSettings.Instance.Manager.StopSubsystems();
+                XRGeneralSettings.Instance.Manager.DeinitializeLoader();
+            }
+            XRGeneralSettings.Instance.Manager.InitializeLoaderSync();
+            XRGeneralSettings.Instance.Manager.StartSubsystems();
+            
         }
 
         // note: this is called by a function in a thread, so it can't interact with unity and instead needs to be called

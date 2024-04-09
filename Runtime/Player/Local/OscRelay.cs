@@ -83,7 +83,7 @@ namespace VRLive.Runtime.Player.Local
                     lastPort = listeningPort;
                     socket.Bind(currentEndpoint);
                 }
-                buf = new byte[10000];
+                  buf = new byte[10000];
                 int bytesIn;
                 try
                 {

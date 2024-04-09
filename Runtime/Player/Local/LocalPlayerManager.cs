@@ -80,6 +80,19 @@ namespace VRLive.Runtime.Player
         public int slimeVrVrcMocapInPort;
 
         public int slimeVrVrmMocapInPort;
+        
+        // Offsets for the x, y, and z rotations for controllers.
+        // If these look correct in one instance and then incorrect shortly after,
+        // make sure you've done a full reset for slimeVR with your hands down by your side.
+        // Chances are that the values are right, but slimeVR just doesn't have a good reference point on its skeleton.
+        
+        public int ControllerRotationXOffset = 0;
+
+        public int ControllerRotationYOffset = 0;
+        
+        public int ControllerRotationZOffset = 0;
+
+        public bool cutHandBones = false;
 
         public void onHandshake(VRLManager manager)
         {

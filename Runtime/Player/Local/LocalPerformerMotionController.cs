@@ -19,11 +19,25 @@ namespace VRLive.Runtime.Player.Local
         {
             base.Awake();
             vmcHandler ??= gameObject.GetComponent<ExternalReceiver>() ?? gameObject.AddComponent<ExternalReceiver>();
+            
+            // kind of a bad place for this function to live but whatever
+            SlimeVRMessageProcessor.DisableDefaultCutBones(vmcHandler);
+            
+
+            if (manager.cutHandBones)
+            {
+                vmcHandler.CutBonesEnable = true;
+                SlimeVRMessageProcessor.CutUnnecessaryBones(vmcHandler);
+                
+            }
+            
             vmcHandler.Model = gameObject;
 
             oscServer = gameObject.GetComponent<VRTPOscServer>() ?? gameObject.AddComponent<VRTPOscServer>();
             // var hmdManager = gameObject.GetComponent<VRMHMDTracker>() ?? gameObject.AddComponent<VRMHMDTracker>();
         }
+
+        
 
         public override void OnNewRelayMessage(object _, VRTPData data)
         {
