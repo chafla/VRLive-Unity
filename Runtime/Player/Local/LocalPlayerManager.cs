@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using RTP;
 using Unity.XR.CoreUtils;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.XR;
 using uOSC;
 using VRLive.Runtime.Player.Local;
@@ -65,10 +66,14 @@ namespace VRLive.Runtime.Player
         public bool hasHandshaked { get; protected set; }
 
         private bool _hasSpawnedPlayer = false;
-
-        public HMDInputData inputData;
-
+        
         public XROrigin xrOrigin;
+
+        public TrackedPoseDriver poseDriver;
+        
+        public InputActionAsset inputActions;
+        
+        public HeadsetValues headsetValues;
 
         // these are trackedposedrivers because we need to know that they're directly tracking the objects.
         public GameObject leftHandController;
@@ -117,6 +122,44 @@ namespace VRLive.Runtime.Player
                 localUser.OnHandshake();
             }
         }
+
+        public void GetHMDValues()
+        {
+            // headsetValues = new HeadsetValues();
+            // headsetValues.head = supposedHeadPos.transform.position;
+            
+
+        }
+
+        public void InitTPD()
+        {
+            if (!inputActions)
+            {
+                Debug.LogError("Please fill input actions if you want to use the direct head position values!");
+                return;
+            }
+
+            var supposedHeadObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            supposedHeadObj.transform.localScale = Vector3.one * 0.1f;
+            
+            var tpd = supposedHeadObj.AddComponent<TrackedPoseDriver>();
+            tpd.trackingType = TrackedPoseDriver.TrackingType.RotationAndPosition;
+            var actionMap = inputActions.FindActionMap("XRI HEAD");
+            if (actionMap == null)
+            {
+                Debug.LogError("Action map must be of XRI Default Input Actions!");
+                return;
+            }
+            tpd.positionAction = actionMap.FindAction("head - TPD - Position") ?? actionMap.FindAction("Position");
+            tpd.rotationAction = actionMap.FindAction("head - TPD - Rotation") ?? actionMap.FindAction("Rotation");
+            tpd.trackingType = TrackedPoseDriver.TrackingType.RotationAndPosition;
+            
+            
+            // manager.xrOrigin.Origin = gameObject;
+            // headTpd = tpd;
+        }
+        
+       
 
         
         // I feel like I put a good bit of work on this, but it kinda feels like the relay does it better?
@@ -202,10 +245,11 @@ namespace VRLive.Runtime.Player
             mocapOut = new ConcurrentQueue<Message>();
             // _active = false;
             relay = gameObject.GetComponent<OscRelay>();
-            inputData = gameObject.AddComponent<HMDInputData>();
+            // inputData = gameObject.AddComponent<HMDInputData>();
             relay = gameObject.GetComponent<OscRelay>() ?? gameObject.AddComponent<OscRelay>();
             // relay.listeningPort = mocapInPort;
             // relay.StartThreads();
+            // InitTPD();
         }
 
         public UserTypeConfig GetConfig()
@@ -292,6 +336,22 @@ namespace VRLive.Runtime.Player
             
             // CreatePlayerModel();
         }
+    }
+
+    [Serializable]
+    public class HeadsetValues
+    {
+
+        public GameObject supposedHead;
+
+        public GameObject supposedLHand;
+
+        public GameObject supposedRHand;
+        
+        
+        public Vector3 lController;
+        public Vector3 rController;
+        public Vector3 head;
     }
 
     [Serializable]

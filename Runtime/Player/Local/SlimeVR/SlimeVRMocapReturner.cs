@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using RTP;
+using Unity.XR.CoreUtils;
 using UnityEngine;
 using uOSC;
 using Thread = System.Threading.Thread;
@@ -175,7 +176,21 @@ namespace VRLive.Runtime.Player.Local.SlimeVR
                 // LController = lController;
                 // RController = rController;
             }
+            
+            public MocapData(Vector3 headPos, Quaternion headRot, Vector3 lControllerPos, Quaternion lControllerRot, Vector3 rControllerPos, Quaternion rControllerRot)
+            {
+                HeadPos = headPos;
+                HeadRot = headRot;
+                LControllerPos = lControllerPos;
+                LControllerRot = lControllerRot;
 
+                RControllerPos = rControllerPos;
+                RControllerRot = rControllerRot;
+                // LController = lController;
+                // RController = rController;
+            }
+
+            
             public bool PosHasRot = false;
 
             public static string HeadPosVRCDest = "/tracking/trackers/head/position";
@@ -235,7 +250,7 @@ namespace VRLive.Runtime.Player.Local.SlimeVR
                 bundle.Add(rotMsg);
             }
 
-            public Bundle GetVRMMessage()
+            public virtual Bundle GetVRMMessage()
             {
                 // vrm bundles position and rotation into one message
                 var bundle = new Bundle(Timestamp.Now);
@@ -255,6 +270,9 @@ namespace VRLive.Runtime.Player.Local.SlimeVR
                 // {
                     bundle.Add(VRMMessage(ControllerVRMDest, VRMRightHandSerial, RControllerPos, RControllerRot));
                 // }
+               
+                
+                // bundle.Add();
 
                 return bundle;
             }
@@ -288,6 +306,7 @@ namespace VRLive.Runtime.Player.Local.SlimeVR
 
                 return bundle;
             }
+            
         }
     }
 }

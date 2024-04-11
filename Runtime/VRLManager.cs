@@ -97,6 +97,25 @@ namespace VRLive.Runtime
             XRGeneralSettings.Instance.Manager.InitializeLoaderSync();
             XRGeneralSettings.Instance.Manager.StartSubsystems();
             
+            string[] args = System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i].Contains("--audience"))
+                {
+                    localUserType = UserType.Audience;
+                    Debug.LogWarning("Starting up as audience member as per command line args!");
+                } 
+                else if (args[i].Contains("--performer"))
+                {
+                    localUserType = UserType.Performer;
+                    Debug.LogWarning("Starting up as performer as per command line args!");
+                }
+                // else if (args[i].Contains("-debugMode"))
+                // {
+                //     GameProperties.DebugMode = true;
+                // }
+            }
+            
         }
 
         // note: this is called by a function in a thread, so it can't interact with unity and instead needs to be called

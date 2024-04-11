@@ -54,13 +54,13 @@ namespace VRLive.Runtime
         public TcpStreamListener(int port)
         {
             Port = port;
-            _tempDir = FileUtil.GetUniqueTempPathInProject();
+            _tempDir = System.IO.Path.GetTempPath();
             callbacks = new Dictionary<string, onNewSocketMessage>();
         }
 
         public virtual void Awake()
         {
-            _tempDir ??= FileUtil.GetUniqueTempPathInProject();
+            _tempDir ??= System.IO.Path.GetTempPath();
             callbacks ??= new Dictionary<string, onNewSocketMessage>();
             messages = new();
             

@@ -37,7 +37,7 @@ namespace VRLive.Runtime
 
             // var fileName = FileUtil.GetUniqueTempPathInProject();
             // var fileName = Path.Join(_tempDir, title);
-            var fileName = _tempDir + DateTime.Now.Millisecond + title;
+            var fileName = Path.Join(_tempDir, DateTime.Now.Millisecond + title);
             
             // var fp = File.OpenWrite(fileName);
             
@@ -67,30 +67,15 @@ namespace VRLive.Runtime
                 Array.Copy(buf, 0, outBuf, bytesRead, bytesIn);
                 
                 bytesRead += bytesIn;
-                // fp.Write(buf[..bytesIn]);
             
             }
-
-            // bytesIn = conn.Receive(buf);
-            
-
-           
-
-            
             
             File.WriteAllBytes(fileName, buf);
             
             var data = new BackingTrackData(fileName, buf);
-            // fp.Write(buf);
-            // fp.Close();
-                
-            // messages.Enqueue(data);
                 
             Debug.LogWarning($"new tcp message of length {outBuf.Length} written out to {fileName}");
-            // messages.Enqueue(buf[..length]);
             
-            
-
             return data;
 
         }

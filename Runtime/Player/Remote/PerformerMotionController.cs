@@ -3,6 +3,7 @@ using EVMC4U;
 using RTP;
 using UnityEngine;
 using uOSC;
+using VRLive.Runtime.Utils;
 
 namespace VRLive.Runtime.Player
 {
@@ -26,6 +27,8 @@ namespace VRLive.Runtime.Player
             vmcHandler ??= obj.GetComponent<ExternalReceiver>();
             vmcHandler ??= obj.AddComponent<ExternalReceiver>();
             vmcHandler.Model = obj;
+            SlimeVRMessageProcessor.DisableDefaultCutBones(vmcHandler);
+            SlimeVRMessageProcessor.CutUnnecessaryBones(vmcHandler);
 
             var transformMarker = gameObject.GetComponentInChildren<PrefabTransformMarker>();
             if (transformMarker)
