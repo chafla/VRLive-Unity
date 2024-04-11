@@ -84,6 +84,34 @@ namespace VRLive.Runtime
 
         public void Awake()
         {
+            string[] args = System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i].Contains("--audience"))
+                {
+                    localUserType = UserType.Audience;
+                    Debug.LogWarning("Starting up as audience member as per command line args!");
+                }
+                else if (args[i].Contains("--performer"))
+                {
+                    localUserType = UserType.Performer;
+                    Debug.LogWarning("Starting up as performer as per command line args!");
+                }
+
+                else if (args[i] == "--server-ip" && i + 1 < args.Length)
+                {
+                    hostSettings.remoteIP = args[++i];
+                }
+
+                else if (args[i] == "--port" && i + 1 < args.Length)
+                {
+                    if (!int.TryParse(args[++i], out hostSettings.handshakePort))
+                    {
+                        Debug.LogError("Invalid port!");
+                    }
+                }
+            }
+
             HandshakeManager = new HandshakeManager(hostSettings.HandshakeEndPoint(), localPorts, localUserType, clientIdentifier);
             HandshakeManager.OnHandshakeCompletion += OnHandshakeSuccessEvent;
             HandshakeManager.RunHandshake();
@@ -97,24 +125,13 @@ namespace VRLive.Runtime
             XRGeneralSettings.Instance.Manager.InitializeLoaderSync();
             XRGeneralSettings.Instance.Manager.StartSubsystems();
             
-            string[] args = System.Environment.GetCommandLineArgs();
-            for (int i = 0; i < args.Length; i++)
-            {
-                if (args[i].Contains("--audience"))
-                {
-                    localUserType = UserType.Audience;
-                    Debug.LogWarning("Starting up as audience member as per command line args!");
-                } 
-                else if (args[i].Contains("--performer"))
-                {
-                    localUserType = UserType.Performer;
-                    Debug.LogWarning("Starting up as performer as per command line args!");
-                }
+            
+                
                 // else if (args[i].Contains("-debugMode"))
                 // {
                 //     GameProperties.DebugMode = true;
                 // }
-            }
+            
             
         }
 
@@ -295,7 +312,7 @@ namespace VRLive.Runtime
     public class HostSettings
     {
         public string remoteIP = "127.0.0.1";
-        public ushort handshakePort = 5653;
+        public int handshakePort = 5653;
 
         public IPEndPoint HandshakeEndPoint()
         {
