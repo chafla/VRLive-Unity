@@ -37,7 +37,7 @@ namespace RTP
         }
     }
 
-    public struct VRTPData
+    public class VRTPData
     {
         public ushort PayloadSize;
         public byte[] Payload;
@@ -59,6 +59,16 @@ namespace RTP
             bundle.Write(stream);
             var buf = stream.GetBuffer();
             var data = new VRTPData((ushort) buf.Length, buf, userId);
+            return data;
+        }
+
+        public static VRTPData FromMessage(Message message, ushort userID)
+        {
+            // very silly that there's not a common interface between these two but what can ya do
+            var stream = new MemoryStream();
+            message.Write(stream);
+            var buf = stream.GetBuffer();
+            var data = new VRTPData((ushort) buf.Length, buf, userID);
             return data;
         }
     }

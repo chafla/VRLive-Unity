@@ -32,6 +32,9 @@ namespace VRLive.Runtime.Player.Local
         {
             base.Awake();
 
+            // we /need/ this for our VRM setup
+            sendFromOscServerToRelay = true;
+
             scaleManager = GetComponent<ScaleManager>() ?? gameObject.AddComponent<ScaleManager>();
 
             // turns out this is the best way to track the root transform, who'd have thunk
@@ -114,9 +117,13 @@ namespace VRLive.Runtime.Player.Local
 	            {
 		            tf = WorldSpaceToOriginSpacePosition(tf);
 	            }
-					
+
+	            if (vmcHandler.RootPositionTransform)
+	            {
+		            // this isn't always set the first time we hit it so better safe than sorry
+		            vmcHandler.RootPositionTransform.localPosition = tf;
+	            }
 	            
-	            vmcHandler.RootPositionTransform.localPosition = tf;
 
 
 

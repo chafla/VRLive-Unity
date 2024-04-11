@@ -111,6 +111,19 @@ namespace VRLive.Runtime
                     }
                 }
             }
+            
+            // other contingencies -- this way we can bake it into the app for quest users
+            #if USERTYPE_AUDIENCE
+            
+            localUserType = UserType.Audience;
+            Debug.LogWarning("Starting up as audience as per define!");
+            
+            #elif USERTYPE_PERFORMER
+            
+            localUserType = UserType.Performer;
+            Debug.LogWarning("Starting up as performer as per define!");
+            
+            #endif
 
             HandshakeManager = new HandshakeManager(hostSettings.HandshakeEndPoint(), localPorts, localUserType, clientIdentifier);
             HandshakeManager.OnHandshakeCompletion += OnHandshakeSuccessEvent;

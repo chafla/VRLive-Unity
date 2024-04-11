@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -20,6 +21,13 @@ namespace VRLive.Runtime.Player.Local
         public string destIP;
 
         protected ConcurrentQueue<VRTPData> incomingData;
+
+        /// <summary>
+        /// If true, we will try to immediately re-queue raw data coming in over the line.
+        /// This is generally what we want, except it may cause some troubles if our packet sizes end up larger than
+        /// MTU. 
+        /// </summary>
+        public bool immediatelyRequeueRawData = true;
 
         private bool _sendActive = false;
         private Thread _sendThread;
@@ -83,7 +91,7 @@ namespace VRLive.Runtime.Player.Local
                     lastPort = listeningPort;
                     socket.Bind(currentEndpoint);
                 }
-                  buf = new byte[10000];
+                buf = new byte[10000];
                 int bytesIn;
                 try
                 {
@@ -102,7 +110,8 @@ namespace VRLive.Runtime.Player.Local
 
                 var vrtpData = new VRTPData((ushort) bytesIn, buf[..bytesIn], 0);
                 OnNewMessage?.Invoke(this, vrtpData);
-                incomingData.Enqueue(vrtpData);
+                if (immediatelyRequeueRawData)
+                    incomingData.Enqueue(vrtpData);
             }
             
         }

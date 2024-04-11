@@ -67,7 +67,7 @@ namespace VRLive.Runtime
                 {
                     Debug.LogError($"Failed to connect to {ServerEndpoint} during handshake. Retrying again shortly.");
                     socket.SendTimeout = Math.Min(2 * socket.SendTimeout, maxTimeout);
-                    socket.ReceiveTimeout *= Math.Min(2 * socket.ReceiveTimeout, maxTimeout);
+                    socket.ReceiveTimeout = Math.Min(2 * socket.ReceiveTimeout, maxTimeout);
                     Thread.Sleep(socket.SendTimeout);
                 }
             }
