@@ -24,7 +24,8 @@ namespace VRLive.Runtime.Player
         public override void OnEnable()
         {
             base.OnEnable();
-           
+
+            listener.label = "remote performer manager";
 
             // var existingAvatar = baseModel.GetComponent<VRMMeta>();
 

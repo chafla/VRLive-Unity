@@ -128,15 +128,26 @@ namespace VRLive.Runtime
             HandshakeManager = new HandshakeManager(hostSettings.HandshakeEndPoint(), localPorts, localUserType, clientIdentifier);
             HandshakeManager.OnHandshakeCompletion += OnHandshakeSuccessEvent;
             HandshakeManager.RunHandshake();
-            
-            // https://forum.unity.com/threads/manual-openxr-load-with-unity-input-system-not-working.1075966/
-            // force restart the xr manager, it doesn't always get shut down properly
-            if( XRGeneralSettings.Instance.Manager.activeLoader != null ){
-                XRGeneralSettings.Instance.Manager.StopSubsystems();
-                XRGeneralSettings.Instance.Manager.DeinitializeLoader();
+
+            try
+            {
+                // https://forum.unity.com/threads/manual-openxr-load-with-unity-input-system-not-working.1075966/
+                // force restart the xr manager, it doesn't always get shut down properly
+                if (XRGeneralSettings.Instance.Manager.activeLoader != null)
+                {
+                    XRGeneralSettings.Instance.Manager.StopSubsystems();
+                    XRGeneralSettings.Instance.Manager.DeinitializeLoader();
+                }
+
+                XRGeneralSettings.Instance.Manager.InitializeLoaderSync();
+                XRGeneralSettings.Instance.Manager.StartSubsystems();
             }
-            XRGeneralSettings.Instance.Manager.InitializeLoaderSync();
-            XRGeneralSettings.Instance.Manager.StartSubsystems();
+
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+            
             
             
                 
@@ -166,17 +177,20 @@ namespace VRLive.Runtime
             clientUserId = result.userId;
             remotePorts = result.serverPorts;
             
-            backingTrackManager ??= gameObject.AddComponent<BackingTrackManager>();
-            // TODO clean this up in a way that doesn't involve as much duplication, maybe by passing some value in
-            backingTrackManager.Listener.Port = result.serverPorts.backing_track_conn_port;
-            backingTrackManager.Listener.Host = hostSettings.remoteIP;
-            backingTrackManager.Listener.label = "backing track";
-            backingTrackManager.Listener.StartListener();
             serverEventManager ??= gameObject.AddComponent<ServerEventManager>();
             serverEventManager.Listener.Port = result.serverPorts.server_event_conn_port;
             serverEventManager.Listener.Host = hostSettings.remoteIP;
             serverEventManager.Listener.label = "server event";
             serverEventManager.Listener.StartListener();
+            
+            backingTrackManager ??= gameObject.AddComponent<BackingTrackManager>();
+            backingTrackManager.serverEventManager = serverEventManager;
+            // TODO clean this up in a way that doesn't involve as much duplication, maybe by passing some value in
+            backingTrackManager.Listener.Port = result.serverPorts.backing_track_conn_port;
+            backingTrackManager.Listener.Host = hostSettings.remoteIP;
+            backingTrackManager.Listener.label = "backing track";
+            backingTrackManager.Listener.StartListener();
+           
             
             if (localUserType == UserType.Performer)
             {

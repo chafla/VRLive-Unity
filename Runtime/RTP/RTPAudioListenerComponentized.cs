@@ -15,13 +15,15 @@ namespace RTP
 
         public bool Started { get; }
 
-        const int audioClipLength = 1024 * 6;
+        const int audioClipLength = 960 * 6;
 
         private float[] audioClipData;
 
-        private int head;
+        
 
         public Dictionary<ushort, RemoteAudioSource> AudioSources;
+
+        public List<VRTPData> audioBuffer;
         
 
 
@@ -61,9 +63,8 @@ namespace RTP
         {
             VRTPData data;
             float[] pcmOut;
-            while (!Listener.AudioDataIn.IsEmpty)
+            while (Listener.AudioDataIn.TryDequeue(out data))
             {
-                Listener.AudioDataIn.TryDequeue(out data);
                 pcmOut = new float[960];
                 var dataOut = Decoder.Decode(data.Payload, data.Payload.Length, pcmOut);
                 if (dataOut < 0)
@@ -95,18 +96,19 @@ namespace RTP
                 newSource.clip = clip;
                 src = new RemoteAudioSource(userID, newSource);
                 AudioSources[userID] = src;
+                Debug.Log($"Created new audio source for remote performer {userID}");
                
             }
 
             var outputSpeaker = src.Source;
-            outputSpeaker.clip.SetData(audioClipData, head);
-            head += pcmLength;
-            if (!outputSpeaker.isPlaying && head > audioClipLength / 2) {
+            outputSpeaker.clip.SetData(audioClipData, src.Head);
+            src.Head += pcmLength;
+            if (!outputSpeaker.isPlaying && src.Head > audioClipLength / 2) {
                 outputSpeaker.Play();
             }
             
             transform.localScale = new Vector3(1, GetRMS(audioClipData) * 100.0f, 1);
-            head %= audioClipLength;
+            src.Head %= audioClipLength;
         }
         
         public float GetRMS(float[] buf) {
@@ -118,10 +120,11 @@ namespace RTP
         }
     }
 
-    public struct RemoteAudioSource
+    public class RemoteAudioSource
     {
         public AudioSource Source;
         public ushort UserID;
+        public int Head;
 
         public RemoteAudioSource(ushort userID, AudioSource source)
         {

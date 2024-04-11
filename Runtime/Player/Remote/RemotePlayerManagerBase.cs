@@ -54,7 +54,7 @@ namespace VRLive.Runtime.Player
                 if (listener)
                 {
                     listener.listeningPort = value;
-                    Debug.Log($"Remote player controller port updated to {value}");
+                    Debug.Log($"Remote player controller's TCP listener port updated to {value}");
                 }
                 else
                 {

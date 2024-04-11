@@ -18,7 +18,7 @@ namespace VRLive.Runtime
 
         private BackingTrackData? _pendingBackingTrack;
 
-        private ServerEventManager _serverEventManager;
+        public ServerEventManager serverEventManager;
 
         public bool playOnLoad = false;
 
@@ -26,15 +26,15 @@ namespace VRLive.Runtime
         {
             Listener = gameObject.GetComponent<BackingTrackListener>();
             source = gameObject.AddComponent<AudioSource>();
-            _serverEventManager = gameObject.GetComponent<ServerEventManager>();
+            serverEventManager = gameObject.GetComponent<ServerEventManager>();
             source.playOnAwake = true;
             // source.clip = clip;
             // WWW www = new WWW(url);
             // clip = AudioClip.Create()
 
-            if (_serverEventManager)
+            if (serverEventManager)
             {
-                _serverEventManager.OnNewServerEvent += onServerMessage;
+                serverEventManager.OnNewServerEvent += onServerMessage;
             }
 
             Listener.NewDataAvailable += onNewBackingTrack;

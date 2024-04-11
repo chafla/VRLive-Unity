@@ -148,6 +148,10 @@ namespace RTP
             
             // want length to be as small as possible
             mic = Microphone.Start(null, true, 1,  (int) sampleRate); // Mono
+        }
+
+        public void EncodeAndSendThread()
+        {
             
         }
 

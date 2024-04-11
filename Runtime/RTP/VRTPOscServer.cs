@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 using uOSC;
@@ -18,6 +19,8 @@ namespace RTP
         public int maxMessagesPerBundle = 5;
 
         public int maxPacketsPerFrame = 1000;
+
+        public List<int> mocapDataHistory;
         
         public event EventHandler<Message> OnNewMessageAvailable;
 
@@ -115,9 +118,15 @@ namespace RTP
 #endif
             }
             
-            if (packetsRead >= maxPacketsPerFrame)
+            if (packetsRead >= maxPacketsPerFrame && mocapDataIn.Count > 1200)
             {
-                Debug.LogWarning($"Current mocap pressure after parsing: {mocapDataIn.Count}");
+                // if (mocapDataHistory.Count < 10)
+                // {
+                //     mocapDataHistory.Enqueue(mocapDataHistory);
+                // }
+                // mocapDataHistory.Average();
+                
+                Debug.LogWarning($"Current mocap pressure after parsing {packetsRead} messages: {mocapDataIn.Count}");
             }
             // while (_active && !mocapDataIn.IsEmpty && packetsRead++ < maxPacketsPerFrame)
             // {

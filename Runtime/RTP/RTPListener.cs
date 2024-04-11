@@ -65,7 +65,7 @@ namespace RTP
                 return;
             }
             Running = true;
-            Debug.Log($"Listening for {label} on {listeningPort}");
+            
             NetworkThread = new Thread(NetworkListenerThread);
             NetworkThread.Start();
         }
@@ -91,7 +91,9 @@ namespace RTP
             sock.ReceiveTimeout = 5000;  // every 100ms check to see if we're running or not
             try
             {
-                sock.Bind(new IPEndPoint(new IPAddress(0), listeningPort));
+                var endpoint = new IPEndPoint(new IPAddress(0), listeningPort);
+                sock.Bind(endpoint);
+                Debug.Log($"Bound to {label} on {endpoint}");
             }
             catch (SocketException e)
             {
@@ -110,6 +112,8 @@ namespace RTP
 
             var lastPort = listeningPort;
             EndPoint currentEndpoint = new IPEndPoint(new IPAddress(0), listeningPort);
+
+            EndPoint incomingEndpoint = new IPEndPoint(0, 0);
             
             while (Running)
             {
@@ -122,7 +126,7 @@ namespace RTP
                 try
                 {
                     // todo come up with a better way to handle the port update so we can bind instead
-                    bytesIn = sock.ReceiveFrom(buffer, ref currentEndpoint);
+                    bytesIn = sock.ReceiveFrom(buffer, ref incomingEndpoint);
                 }
                 catch (SocketException e)
                 {
@@ -132,6 +136,11 @@ namespace RTP
                         {
                             Debug.LogError($"{label} on {listeningPort} had an exception");
                             Debug.LogException(e);
+                        }
+
+                        else
+                        {
+                            Debug.LogError($"Timed out waiting on message from {currentEndpoint}");
                         }
                        
                     }
