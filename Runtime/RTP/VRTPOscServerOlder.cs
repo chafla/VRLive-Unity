@@ -7,7 +7,7 @@ using uOSC;
 namespace RTP
 {
     // [RequireComponent(typeof(RTPListener))]
-    public class VRTPOscServer : uOscServer
+    public class VRTPOscServerOld : uOscServer
     {
         // public RTPListener Listener;
         public bool WaitForAudio = false;

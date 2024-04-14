@@ -64,30 +64,32 @@ namespace VRLive.Runtime.Player.Local
                 // oscServer.OnNewMessageAvailable += PassMessageToRelay;
             // }
 
-            _sendFromOscServerPrevious = sendFromOscServerToRelay;
+            // _sendFromOscServerPrevious = sendFromOscServerToRelay;
 
         }
 
         public override void Update()
         {
             base.Update();
-            if (_sendFromOscServerPrevious != sendFromOscServerToRelay)
-            {
-                _sendFromOscServerPrevious = sendFromOscServerToRelay;
-                if (sendFromOscServerToRelay)
-                {
-                    // prevent it from re-ingesting its own data, since we want to give it our own data to work with
-                    manager.relay.immediatelyRequeueRawData = false;
-                    oscServer.onDataReceived.AddListener(PassMessageToRelay);
-                }
-                else
-                {
-                    oscServer.onDataReceived.RemoveListener(PassMessageToRelay);
-                    manager.relay.immediatelyRequeueRawData = true;
-                }
-                
-
-            }
+            // if (_sendFromOscServerPrevious != sendFromOscServerToRelay)
+            // {
+            //     _sendFromOscServerPrevious = sendFromOscServerToRelay;
+            //     if (!sendFromOscServerToRelay)
+            //     {
+            //         
+            //         oscServer.onDataReceived.RemoveListener(PassMessageToRelay);
+            //         manager.relay.immediatelyRequeueRawData = true;
+            //        
+            //     }
+            //     else
+            //     {
+            //         // prevent it from re-ingesting its own data, since we want to give it our own data to work with
+            //         manager.relay.immediatelyRequeueRawData = false;
+            //         oscServer.onDataReceived.AddListener(PassMessageToRelay);
+            //     }
+            //     
+            //
+            // }
 
         }
 
@@ -113,8 +115,8 @@ namespace VRLive.Runtime.Player.Local
         
         public override void OnNewRelayMessage(object _, VRTPData data)
         {
-            if (sendFromOscServerToRelay)
-                oscServer.mocapDataIn.Enqueue(data);
+            // if (!sendFromOscServerToRelay)
+            oscServer.mocapDataIn.Enqueue(data);
         }
     }
 }

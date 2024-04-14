@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace VRLive.Runtime.Utils
+namespace VRLive.Runtime.Utils.Spawn
 {
     /// <summary>
     /// A simple spawn point.

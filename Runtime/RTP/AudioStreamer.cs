@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using UnityEngine;
 using UnityOpus;
 
@@ -48,6 +50,12 @@ namespace RTP
 
         private double desiredFrameDuration => packetDurMs / 1000.0;
 
+        private bool _active = false;
+
+        private ConcurrentQueue<float[]> _rawAudioDataFromMic;
+
+        private Thread _encodeThread;
+
         /// <summary>
         /// The desired frame size given the sample rate.
         /// Note that "this must be an Opus frame size for the encoder's sampling rate. For example, at 48 kHz the permitted values are 120, 240, 480, 960, 1920, and 2880."
@@ -57,8 +65,17 @@ namespace RTP
         
         // Opus encoder
         protected Encoder Encoder;
-        
-        
+
+
+        private void Awake()
+        {
+            _rawAudioDataFromMic = new ConcurrentQueue<float[]>();
+        }
+
+        private void OnDisable()
+        {
+            _active = false;
+        }
 
         void SetRtpHeader(byte[] rtpPacket)
         {
@@ -148,11 +165,71 @@ namespace RTP
             
             // want length to be as small as possible
             mic = Microphone.Start(null, true, 1,  (int) sampleRate); // Mono
+
+            _encodeThread = new Thread(EncodeAndSendThread);
+            _active = true;
+            _encodeThread.Start();
         }
 
         public void EncodeAndSendThread()
         {
+            float[] dataOut;
+
+            // data going into the encoder
+            float[] encoderBuf;
             
+            // and data coming out 
+
+            float[] encOut = new float[desiredFrameSize];
+
+            while (_active)
+            {
+                while (_rawAudioDataFromMic.TryDequeue(out dataOut))
+                {
+                    
+                    int framePointer = 0;
+
+                    while (framePointer < dataOut.Length)
+                    {
+                        encoderBuf = new float[desiredFrameSize];
+                        var bytesSafe = dataOut.Length - (framePointer + desiredFrameSize);
+                        int bytesCopied = Math.Min(dataOut.Length - framePointer, desiredFrameSize);
+                        Array.Copy(dataOut, framePointer, encoderBuf, 0, bytesCopied);
+
+                        framePointer += bytesCopied;
+
+                        byte[] output;
+                        
+                        try
+                        {
+                            output = new byte[dataOut.Length];
+                        }
+                        catch (OverflowException e)
+                        {
+                            Debug.LogError($"Failed to read samples: pos - last pos = {pos - lastPos}, len = {encoderBuf.Length}");
+                            Debug.LogException(e);
+                            continue;
+                        }
+
+                        
+                        var res = Encoder.Encode(encoderBuf, output);
+                        if (res < 0)
+                        {
+                            Debug.LogError($"Opus encoder error: {res}");
+                        }
+
+                        SendToServer(output, res);
+                    }
+                    // encoder returns either a positive value indicating the number of bytes encoded,
+                    // or a negative value indicating the error code
+                    
+                    // To encode a frame, opus_encode() or opus_encode_float() must be called with exactly one frame (2.5, 5, 10, 20, 40 or 60 ms) of audio data:
+                    // (20ms is standard)
+                    // https://www.opus-codec.org/docs/opus_api-1.2/group__opus__encoder.html
+                    
+                    
+                }
+            }
         }
 
         private void Update()
@@ -181,7 +258,7 @@ namespace RTP
                     
                     // Allocate the space for the new sample.
                     int len = readLength * mic.channels;
-                    float[] samples = new float[desiredFrameSize];
+                    float[] samples = new float[len];
                     byte[] output;
                     try
                     {
@@ -198,26 +275,11 @@ namespace RTP
                         print($"{len} samples, consuming up to {desiredFrameSize}");
                     mic.GetData(samples, lastPos);
                     
-                    try
-                    {
-                        // encoder returns either a positive value indicating the number of bytes encoded,
-                        // or a negative value indicating the error code
-                        
-                        // To encode a frame, opus_encode() or opus_encode_float() must be called with exactly one frame (2.5, 5, 10, 20, 40 or 60 ms) of audio data:
-                        // (20ms is standard)
-                        // https://www.opus-codec.org/docs/opus_api-1.2/group__opus__encoder.html
-                        var res = Encoder.Encode(samples, output);
-                        if (res < 0)
-                        {
-                            Debug.LogError($"Bad error code: {res}");
-                        }
-
-                        SendToServer(output, res);
-                    }
-                    finally
-                    {
-                        lastPos = pos;
-                    }
+                    _rawAudioDataFromMic.Enqueue(samples);
+                    
+                    
+                    lastPos = pos;
+                    
                     
                     
 

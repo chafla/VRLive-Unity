@@ -11,6 +11,7 @@ using UnityEngine.InputSystem.XR;
 using uOSC;
 using VRLive.Runtime.Player.Local;
 using VRLive.Runtime.Utils;
+using VRLive.Runtime.Utils.Spawn;
 
 namespace VRLive.Runtime.Player
 {

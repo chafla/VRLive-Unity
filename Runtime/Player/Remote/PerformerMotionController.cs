@@ -60,6 +60,7 @@ namespace VRLive.Runtime.Player
         public void OnEnable()
         {
             vmcHandler.Model = gameObject;
+            vmcHandler.RootScaleOffsetSynchronize = true;
             // vmcHandler.RootPositionTransform = parent.baseModelTransformRoot;
             // vmcHandler.RootRotationTransform = parent.baseModelTransformRoot;
             // 
