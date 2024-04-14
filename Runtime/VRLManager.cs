@@ -190,6 +190,7 @@ namespace VRLive.Runtime
             backingTrackManager.Listener.Host = hostSettings.remoteIP;
             backingTrackManager.Listener.label = "backing track";
             backingTrackManager.Listener.StartListener();
+            
            
             
             if (localUserType == UserType.Performer)
@@ -198,7 +199,8 @@ namespace VRLive.Runtime
                 audioStreamer ??= gameObject.AddComponent<AudioStreamer>();
                 audioStreamer.sendServerPort = result.serverPorts.performer_audio_in;
                 audioStreamer.sendServerIP = hostSettings.remoteIP;
-                // audioStreamer.s
+                // the streamer also passes data about our current backing track position in the RTP packet header
+                audioStreamer.backingTrackManager = backingTrackManager;
             }
 
             if (onlyRunLocal)
@@ -314,6 +316,9 @@ namespace VRLive.Runtime
             performerManager.UpdateManager(serverEventManager);
             performerManager.listenPort = localPorts.vrtp_data;
             performerManager.clientUserId = clientUserId;
+            performerManager.backingTrackManager = backingTrackManager;
+            performerManager.listener.OnNewData += backingTrackManager.OnNewVRTPPacket;
+
         }
         
         

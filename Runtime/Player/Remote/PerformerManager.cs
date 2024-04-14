@@ -8,7 +8,8 @@ namespace VRLive.Runtime.Player
     public class PerformerManager : RemotePlayerManagerBase
     {
 
-        
+        // keep tabs on this so we can make use of better audio timing
+        public BackingTrackManager backingTrackManager;
 
         /// <summary>
         /// The VRM avatar that we plan to use as our base.

@@ -15,17 +15,23 @@ namespace RTP
 
         public ushort UserID;
 
+        public float backingTrackPosition;
+
         public byte[] OSCBytes => OSC.Payload;
         public byte[] AudioBytes => Audio.Payload;
         
         public static VRTPPacket FromBuffer(byte[] input)
         {
             var packet = new VRTPPacket();
-            var oscStart = 10;
+            var oscStart = 14;
             packet.PayloadSize = BinaryPrimitives.ReadUInt32BigEndian(input[..4]);
             var oscSize = BinaryPrimitives.ReadUInt16BigEndian(input[4..6]);
             var audioSize = BinaryPrimitives.ReadUInt16BigEndian(input[6..8]);
-            packet.UserID = BinaryPrimitives.ReadUInt16BigEndian(input[8..oscStart]);
+            packet.UserID = BinaryPrimitives.ReadUInt16BigEndian(input[8..10]);
+            var res = input[10..oscStart];
+            Array.Reverse(res);
+            packet.backingTrackPosition = System.BitConverter.ToSingle(res);
+            // packet.backingTrackPosition = BinaryPrimitives.(input[10..oscStart]);
             var oscEndOffset = oscStart + oscSize;
             var oscPayload = input[oscStart..oscEndOffset];
             var audioPayload = input[oscEndOffset..(oscEndOffset + audioSize)];

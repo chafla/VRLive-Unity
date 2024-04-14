@@ -4,9 +4,15 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityOpus;
+using VRLive.Runtime;
 
+
+// please forgive this file being a little messy
+// this is kind of a side-effect of it being hacked together from a few different tutorials on how to get RTP audio
+// working in unity (the truth: it's tricky)
 
 namespace RTP
 {
@@ -14,7 +20,18 @@ namespace RTP
 
     public class AudioStreamer : MonoBehaviour
     {
-        const int RTP_HEADER_LEN = 12;
+        /// <summary>
+        /// The base length of the RTP header field, not accounting for extensions
+        /// </summary>
+        private const int RTP_HEADER_LEN = 12;
+
+        [DoNotSerialize]
+        private bool _sendBackingTrackData = true;
+
+        /// <summary>
+        /// How long the extension field of the rtp header is
+        /// </summary>
+        private const int RTP_EXTENSION_LEN = 8;
         // Audio control variables
         AudioClip mic;
         int lastPos, pos;
@@ -43,6 +60,17 @@ namespace RTP
         public NumChannels channels = NumChannels.Mono;
         public OpusApplication application = OpusApplication.Audio;
 
+        // This may be seen by some as a little hacky but it's kind of the best bet we got here
+        // Smuggle the time in samples of the backing track along the start of the audio track.
+        // We have a lot of overhead here, we can usually spare another four bytes.
+        
+        // This is a best-effort thing. If we can't easily find the backing track listener, then we just don't send it.
+        // Easy as that.
+        
+        public BackingTrackManager backingTrackManager;
+
+        public float lastBackingTrackPosition = 0;
+
         public bool Verbose = false;
 
         // Must be one of 2.5, 5, 10, 20, 40, or 60
@@ -70,6 +98,7 @@ namespace RTP
         private void Awake()
         {
             _rawAudioDataFromMic = new ConcurrentQueue<float[]>();
+            backingTrackManager = gameObject.GetComponent<BackingTrackManager>();
         }
 
         private void OnDisable()
@@ -89,13 +118,20 @@ namespace RTP
             RtpPacket.WriteHeader(rtpPacket
                 , 2 // version
                 , 0 // padding
-                , 0 // extension
+                , _sendBackingTrackData ? 1 : 0  // extension is 1: we are including a header extension to note the location of our backing track
                 , 0 // csrc_count
                 , 1 // marker, set to one for last packet
                 , 96); // payload_type PCM 16bits BE signed
             RtpPacket.WriteSequenceNumber(rtpPacket, sequenecId);
             RtpPacket.WriteTS(rtpPacket, Convert.ToUInt32(DateTime.Now.Millisecond * 90));
             RtpPacket.WriteSSRC(rtpPacket, 0);
+            // our addition
+            // if (backingTrackManager)
+            // {
+            //     
+            // }
+            if (_sendBackingTrackData)
+                RtpPacket.WriteBackingTrackPositionField(rtpPacket, lastBackingTrackPosition);
             sequenecId++;
         }
         
@@ -126,18 +162,18 @@ namespace RTP
 
         void SendData(byte[] byteArray, int length)
         {
+            
             if (socket == null) return;
             // if (samples == null || samples.Length == 0) return;
-            var dataToSend = length;
             // int maxEthMTU = 1400;
             int offset = 0;
             // while (dataToSend > 0)
             // {
                 // var bodyLen = Math.Min(dataToSend, maxEthMTU);
-                var bodyLen = dataToSend;  // who cares about mtu tbh
-                var rtpAudioData = new byte[RTP_HEADER_LEN + bodyLen];
+                var headerLen = RTP_HEADER_LEN + (_sendBackingTrackData ? RTP_EXTENSION_LEN : 0);
+                var rtpAudioData = new byte[headerLen + length];
                 SetRtpHeader(rtpAudioData);
-                Array.Copy(byteArray, offset, rtpAudioData, RTP_HEADER_LEN, bodyLen);
+                Array.Copy(byteArray, offset, rtpAudioData, headerLen, length);
                 IPEndPoint remoteEndPoint;
                 try
                 {
@@ -150,8 +186,8 @@ namespace RTP
                 }
 
                 int dataSent = socket.SendTo(rtpAudioData, 0, rtpAudioData.Length, SocketFlags.None, remoteEndPoint);
-                dataToSend = dataToSend - dataSent;
-                offset = offset + dataSent;
+                // dataToSend = dataToSend - dataSent;
+                // offset = offset + dataSent;
             // }
         }
 
@@ -218,6 +254,12 @@ namespace RTP
                             Debug.LogError($"Opus encoder error: {res}");
                         }
 
+                        // if (backingTrackManager != null)
+                        // {
+                        //        
+                        //     Array.Copy();
+                        // }
+
                         SendToServer(output, res);
                     }
                     // encoder returns either a positive value indicating the number of bytes encoded,
@@ -234,6 +276,10 @@ namespace RTP
 
         private void Update()
         {
+            if (backingTrackManager)
+            {
+                lastBackingTrackPosition = backingTrackManager.source.time;
+            }
             if ((pos = Microphone.GetPosition(null)) > 0)
             {
                 

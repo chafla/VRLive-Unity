@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Concurrent;
 using System.IO;
+using RTP;
 using UnityEngine;
 using UnityEngine.Networking;
 using uOSC;
@@ -21,6 +22,15 @@ namespace VRLive.Runtime
         public ServerEventManager serverEventManager;
 
         public bool playOnLoad = false;
+        
+        // note: we're provided samples, but as an int32 for some reason?
+        // at 44.1kHz this is not enough, so we have to use a float
+
+        public float remoteBackingTrackTiming;
+
+        public float localBackingTrackTiming;
+
+        public float dif;
 
         public void Awake()
         {
@@ -40,6 +50,25 @@ namespace VRLive.Runtime
             Listener.NewDataAvailable += onNewBackingTrack;
         }
 
+        /// <summary>
+        /// Listener for updated backing track timing.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="packet"></param>
+        public void OnNewVRTPPacket(object sender, VRTPPacket packet)
+        {
+            // Debug.Log("aaa");
+            if (packet.backingTrackPosition > 0)
+            {
+                remoteBackingTrackTiming = packet.backingTrackPosition;
+
+                dif = remoteBackingTrackTiming - localBackingTrackTiming;
+            }
+
+            
+           
+        }
+
         public void Update()
         {
             if (_pendingBackingTrack != null)
@@ -48,6 +77,7 @@ namespace VRLive.Runtime
                 StartCoroutine(LoadMusic(_pendingBackingTrack.Value.Title));
                 _pendingBackingTrack = null;
             }
+            localBackingTrackTiming = source.time;
         }
 
         public void Play()
@@ -157,5 +187,11 @@ namespace VRLive.Runtime
                 Debug.Log("Unable to locate converted song file.");
             }
         }
+    }
+
+    public class RemoteBackingTrackOffset
+    {
+        public int audioTimestamp;
+        public uint backingTrackAudioTimestampOffset;
     }
 }
