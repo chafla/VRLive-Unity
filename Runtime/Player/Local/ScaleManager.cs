@@ -40,18 +40,27 @@ namespace VRLive.Runtime.Player.Local
         /// </summary>
         public float activeScaling;
 
+        private bool _useOculusConfig = false;
+
         public void Awake()
         {
             inputData = GetComponent<HMDInputData>() ?? gameObject.AddComponent<HMDInputData>();
             lControllerPos = Vector3.zero;
             rControllerPos = Vector3.zero;
+
+            if (SystemInfo.deviceName.ToLower().Contains("oculus"))
+            {
+                _useOculusConfig = true;
+            }
         }
         
         public void Update()
         {
-            inputData.leftController.TryGetFeatureValue(UnityEngine.XR.CommonUsages.menuButton,
+            var button = _useOculusConfig
+                ? UnityEngine.XR.CommonUsages.secondaryButton : UnityEngine.XR.CommonUsages.menuButton;
+            inputData.leftController.TryGetFeatureValue(button,
                 out lControllerButtonPressed);
-            inputData.rightController.TryGetFeatureValue(UnityEngine.XR.CommonUsages.menuButton,
+            inputData.rightController.TryGetFeatureValue(button,
                 out rControllerButtonPressed);
             
             inputData.leftController.TryGetFeatureValue(UnityEngine.XR.CommonUsages.devicePosition,

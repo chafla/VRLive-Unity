@@ -74,40 +74,41 @@ namespace VRLive.Runtime
             
 
             Debug.LogWarning($"Established new handshake connection with {ServerEndpoint}");
-                var buf = new byte[1024];
-                var bytesIn = socket.Receive(buf);
-                if (bytesIn == 0)
-                {
-                    throw new Exception("Handshake was aborted during synack.");
-                }
-                
-                var bufDecoded = Encoding.UTF8.GetString(buf[..bytesIn]);
-                var syn = JsonUtility.FromJson<HandshakeSyn>(bufDecoded);
-                
-                // build our response
-                var handshakeSynAck = new HandshakeSynack(UserType, syn.user_id, LocalPorts, Identifier, null);
+            var buf = new byte[1024];
+            var bytesIn = socket.Receive(buf);
+            if (bytesIn == 0)
+            {
+                throw new Exception("Handshake was aborted during synack.");
+            }
+            
+            var bufDecoded = Encoding.UTF8.GetString(buf[..bytesIn]);
+            var syn = JsonUtility.FromJson<HandshakeSyn>(bufDecoded);
+            
+            // build our response
+            var handshakeSynAck = new HandshakeSynack(UserType, syn.user_id, LocalPorts, Identifier, null);
 
-                var synackOut = JsonUtility.ToJson(handshakeSynAck);
-                // send it
-                socket.Send(Encoding.UTF8.GetBytes(synackOut));
-                
-                // then capture the final result
+            var synackOut = JsonUtility.ToJson(handshakeSynAck);
+            // send it
+            socket.Send(Encoding.UTF8.GetBytes(synackOut));
+            
+            // then capture the final result
 
-                buf = new byte[1024];
-                bytesIn = socket.Receive(buf);
-                
-                if (bytesIn == 0)
-                {
-                    throw new Exception("Handshake was aborted after completion.");
-                }
-                
-                bufDecoded = Encoding.UTF8.GetString(buf[..bytesIn]);
-                var handshakeComp = JsonUtility.FromJson<HandshakeCompletion>(bufDecoded);
+            socket.SendTimeout = socket.ReceiveTimeout = 0;
+            buf = new byte[1024];
+            bytesIn = socket.Receive(buf);
+            
+            if (bytesIn == 0)
+            {
+                throw new Exception("Handshake was aborted after completion.");
+            }
+            
+            bufDecoded = Encoding.UTF8.GetString(buf[..bytesIn]);
+            var handshakeComp = JsonUtility.FromJson<HandshakeCompletion>(bufDecoded);
 
-                var result = new HandshakeResult(syn, handshakeComp);
-                Debug.LogWarning($"Handshake completed successfully. We are user #{result.userId}");
-                
-                OnHandshakeCompletion?.Invoke(this, result);
+            var result = new HandshakeResult(syn, handshakeComp);
+            Debug.LogWarning($"Handshake completed successfully. We are user #{result.userId}");
+            
+            OnHandshakeCompletion?.Invoke(this, result);
                 
 
             // }

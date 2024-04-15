@@ -1,18 +1,29 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using uOSC;
+
 
 namespace RTP
 {
     // [RequireComponent(typeof(RTPListener))]
     public class VRTPOscServer : uOscServer
     {
+        
         // public RTPListener Listener;
         public bool WaitForAudio = false;
         private Parser _parser;
         public ConcurrentQueue<VRTPData> mocapDataIn;
+
+        public int filterNPackets = 2;
+
+        public int maxPacketsPerFrame = 500;
+
+        public int currentMocapPressure;
+
+        public int purgeMocapPressureIfGreaterThan = int.MaxValue;
 
         private bool _active = false;
 
@@ -65,11 +76,15 @@ namespace RTP
             //         return;
             //     }
             // }
-            var maxPerFrame = 500;
             var packetsRead = 0;
+            
             // Debug.Log($"Incoming mocap pressure: {Listener.MocapDataIn.Count}");
-            while (_active && !mocapDataIn.IsEmpty && packetsRead++ < maxPerFrame)
+            while (_active && !mocapDataIn.IsEmpty && packetsRead++ < maxPacketsPerFrame)
             {
+                // if (filterNPackets != 0 && packetsRead % filterNPackets != 0)
+                // {
+                //     continue;
+                // }
                 if (WaitForAudio && mocapDataIn.TryPeek(out data))
                 {
                     var dt = DateTime.Now - data.Arrived;
@@ -110,9 +125,16 @@ namespace RTP
                 
             }
 
-            if (packetsRead >= maxPerFrame)
+            if (packetsRead >= maxPacketsPerFrame)
             {
                 Debug.LogWarning($"Current mocap pressure after parsing: {mocapDataIn.Count}");
+            }
+
+            currentMocapPressure = mocapDataIn.Count;
+
+            if (mocapDataIn.Count > purgeMocapPressureIfGreaterThan)
+            {
+                mocapDataIn.Clear();
             }
         }
 

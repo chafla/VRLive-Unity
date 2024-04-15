@@ -124,6 +124,12 @@ namespace VRLive.Runtime
             Debug.LogWarning("Starting up as performer as per define!");
             
             #endif
+            
+            #if CONNECT_MAIN_SERVER_PORT
+            
+            hostSettings.remoteIP = "129.21.149.239";
+            
+            #endif
 
             HandshakeManager = new HandshakeManager(hostSettings.HandshakeEndPoint(), localPorts, localUserType, clientIdentifier);
             HandshakeManager.OnHandshakeCompletion += OnHandshakeSuccessEvent;

@@ -146,7 +146,7 @@ namespace VRLive.Runtime.Player.Local
 
             if (scaleManager)
             {
-	            gameObject.transform.localScale = Vector3.one * Math.Min(Math.Max(scaleManager.ScaledValue, 0.1f), 5.0f);
+	            gameObject.transform.localScale = Vector3.one * Math.Min(Math.Max(scaleManager.ScaledValue, 0.7f), 5.0f);
             }
             
             // gameObject.transform.position = manager.xrOrigin.Camera.transform.position;// + new Vector3(0, eyeYOffset, 0);
