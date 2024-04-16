@@ -36,7 +36,13 @@ namespace VRLive.Runtime.Player.Local
         public void StartReturner()
         {
             returner = GetComponent<SlimeVRMocapReturner>() ?? gameObject.AddComponent<SlimeVRMocapReturner>();
+            
+            #if SLIMEVR_ON_DESKTOP
+            returner.slimeVRIP = "129.21.149.239";
+            #else
+            
             returner.slimeVRIP = manager.slimeVRHost;
+            #endif
             switch (manager.userType)
             {
                 case UserType.Audience:

@@ -33,6 +33,11 @@ namespace RTP
         void Awake()
         {
             _parser = new Parser();
+            #if OSC_PURGE_AGGRESSIVE
+            Debug.LogWarning("The purge is aggressive! Mocap performance will be limited.");
+            purgeMocapPressureIfGreaterThan = 10;
+            maxPacketsPerFrame = 2;
+            #endif
         }
         
         void OnEnable()
@@ -125,10 +130,12 @@ namespace RTP
                 
             }
 
+            #if DEBUG_MOCAP_PRESSURE
             if (packetsRead >= maxPacketsPerFrame)
             {
                 Debug.LogWarning($"Current mocap pressure after parsing: {mocapDataIn.Count}");
             }
+            #endif
 
             currentMocapPressure = mocapDataIn.Count;
 

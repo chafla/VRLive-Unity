@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR;
 
@@ -9,6 +10,16 @@ namespace VRLive.Runtime.Player.Local
         public InputDevice rightController;
         public InputDevice leftController;
         public InputDevice hmd;
+
+        public bool usingOculus = false;
+
+        private void Awake()
+        {
+            if (SystemInfo.deviceName.ToLower().Contains("oculus"))
+            {
+                usingOculus = true;
+            }
+        }
 
         void Update()
         {

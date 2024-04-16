@@ -18,9 +18,8 @@ namespace VRLive.Runtime.Player.Local
         // use a concurrent message queue here since we can't set position from the callback's thread
         public ConcurrentQueue<Message> messageQueue;
 
-        public override void Awake()
+        public virtual void Awake()
         {
-            base.Awake();
             messageQueue = new ConcurrentQueue<Message>();
             // manager.xrOrigin.
         }

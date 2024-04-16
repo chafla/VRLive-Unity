@@ -112,16 +112,29 @@ namespace VRLive.Runtime.Player
                 case "/server/status/useradd":
                     userId = (int) msg.values[0];
                     userType = (UserType)msg.values[1];
-                    Debug.Log($"New user {userId}!");
+                    
+                    // empty compile unit so we can just show what we've got
+#if REPRODUCE_LOCAL_USER
+#else
                     if (userId == clientUserId)
                     {
                         Debug.Log("Got an add message for ourselves, ignoring!");
-                        
+                        return;
                     }
+#endif
+                    Debug.Log($"Hello {userId}!");
                     CreateNewPlayer(userId, userType);
                     break;
                 case "/server/status/userremove":
                     userId = (ushort)msg.values[0];
+#if REPRODUCE_LOCAL_USER
+#else
+                    if (userId == clientUserId)
+                    {
+                        Debug.Log("Got a removal message for ourselves, ignoring!");
+                        return;
+                    }
+#endif
                     userType = (UserType)msg.values[1];
                     Debug.Log($"Goodbye {userId}!");
                     RemovePlayer(userId, userType);
@@ -159,6 +172,12 @@ namespace VRLive.Runtime.Player
         
         protected void OnNewListenerData(object obj, VRTPPacket pkt)
         {
+            #if !REPRODUCE_LOCAL_USER
+            if (pkt.UserID == clientUserId)
+            {
+                return;
+            }
+            #endif
             PlayerMotionController player;
             if (players.TryGetValue(pkt.UserID, out player))
             {

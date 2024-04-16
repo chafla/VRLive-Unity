@@ -36,9 +36,8 @@ namespace VRLive.Runtime.Player.Local
 
         private bool _sendFromOscServerPrevious = false;
         
-        public override void Awake()
+        public virtual void Awake()
         {
-            base.Awake();
             workingBundle = new Bundle(Timestamp.Now);
             vmcHandler ??= gameObject.GetComponent<ExternalReceiver>() ?? gameObject.AddComponent<ExternalReceiver>();
             

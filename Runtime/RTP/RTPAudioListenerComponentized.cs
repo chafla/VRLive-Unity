@@ -15,18 +15,15 @@ namespace RTP
 
         public bool Started { get; }
 
-        const int audioClipLength = 960 * 6;
+        // const int audioClipLength = 960 * 6
+        int audioClipLength => 5 * (int) sampleRate;
 
-        private float[] audioClipData;
-
+        // private float[] audioClipData;
         
-
-        public Dictionary<ushort, RemoteAudioSource> AudioSources;
+        public Dictionary<ushort, RTPAudioPlayer> AudioSources;
 
         public List<VRTPData> audioBuffer;
         
-
-
         private AudioClip _clip;
 
         // public AudioSource outputSpeaker;
@@ -65,13 +62,13 @@ namespace RTP
             float[] pcmOut;
             while (Listener.AudioDataIn.TryDequeue(out data))
             {
-                pcmOut = new float[960];
-                var dataOut = Decoder.Decode(data.Payload, data.Payload.Length, pcmOut);
-                if (dataOut < 0)
-                {
-                    throw new Exception($"Opus Error {dataOut}");
-                }
-                OnDecoded(pcmOut, dataOut, data.UserID);
+                // pcmOut = new float[48000];
+                // var dataOut = Decoder.Decode(data.Payload, data.Payload.Length, pcmOut);
+                // if (dataOut < 0)
+                // {
+                //     throw new Exception($"Opus Error {dataOut}");
+                // }
+                OnNewData(data);
             }
             
         }
@@ -81,34 +78,46 @@ namespace RTP
             Listener.Stop();
         }
 
-        private void OnDecoded(float[] pcm, int pcmLength, ushort userID) {
-            if (audioClipData == null || audioClipData.Length != pcmLength) {
-                // assume that pcmLength will not change.
-                audioClipData = new float[pcmLength];
-            }
-            Array.Copy(pcm, audioClipData, pcmLength);
-            RemoteAudioSource src;
-            if (!AudioSources.TryGetValue(userID, out src))
-            {
-                var clip = AudioClip.Create($"RTP audio source {userID}", audioClipLength, (int)channels, (int)sampleRate, false);
-                var newSource = gameObject.AddComponent<AudioSource>();
-                // newSource. = $"Audio source {userID}";
-                newSource.clip = clip;
-                src = new RemoteAudioSource(userID, newSource);
-                AudioSources[userID] = src;
-                Debug.Log($"Created new audio source for remote performer {userID}");
-               
-            }
+        private void OnAudioRead(float[] data)
+        {
+            
+        }
 
-            var outputSpeaker = src.Source;
-            outputSpeaker.clip.SetData(audioClipData, src.Head);
-            src.Head += pcmLength;
-            if (!outputSpeaker.isPlaying && src.Head > audioClipLength / 2) {
-                outputSpeaker.Play();
+        private void OnNewData(VRTPData data) {
+            // if (audioClipData == null || audioClipData.Length != pcmLength) {
+            //     // assume that pcmLength will not change.
+            //     audioClipData = new float[pcmLength];
+            // }
+            
+            
+            
+            // Array.Copy(pcm, audioClipData, pcmLength);
+            RTPAudioPlayer src;
+            if (!AudioSources.TryGetValue(data.UserID, out src))
+            {
+                // var newSource = gameObject.AddComponent<AudioSource>();
+                // newSource. = $"Audio source {userID}";
+
+                var newObj = new GameObject();
+                newObj.transform.parent = gameObject.transform;
+                newObj.name = $"Audio source for {data.UserID}";
+                newObj.SetActive(true);
+                
+                // newSource.loop = true;
+                src = newObj.AddComponent<RTPAudioPlayer>();
+                AudioSources[data.UserID] = src;
+                Debug.Log($"Created new audio source for remote performer {data.UserID}");
+                
+                src.Register(data.UserID, audioClipLength, channels, sampleRate);
+                
+                // var clip = AudioClip.Create($"RTP audio source {userID}", audioClipLength, (int)channels, (int)sampleRate, false);
+                //
+                // newSource.clip = clip;
             }
             
-            transform.localScale = new Vector3(1, GetRMS(audioClipData) * 100.0f, 1);
-            src.Head %= audioClipLength;
+            src.OnNewData(data);
+
+            
         }
         
         public float GetRMS(float[] buf) {
@@ -120,26 +129,7 @@ namespace RTP
         }
     }
 
-    public class RemoteAudioSource
-    {
-        public AudioSource Source;
-        public ushort UserID;
-        public int Head;
-
-        public RemoteAudioSource(ushort userID, AudioSource source)
-        {
-            Source = source;
-            UserID = userID;
-        }
-        
-        public RemoteAudioSource(ushort userID)
-        {
-            Source = new AudioSource();
-            UserID = userID;
-        }
-        
-        
-    }
+    
     
     
     
