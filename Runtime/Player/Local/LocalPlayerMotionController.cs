@@ -39,10 +39,12 @@ namespace VRLive.Runtime.Player.Local
             
             #if SLIMEVR_ON_DESKTOP
             returner.slimeVRIP = "129.21.149.239";
+            #elif SLIMEVR_ON_LAPTOP
+            returner.slimeVRIP = "129.21.72.114";
             #else
-            
             returner.slimeVRIP = manager.slimeVRHost;
             #endif
+            
             switch (manager.userType)
             {
                 case UserType.Audience:

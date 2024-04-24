@@ -20,13 +20,19 @@ namespace VRLive.Runtime.Player.Local
 
         public Transform rootRotation;
 
+        public bool rootRotationOnlyAlongY;
+
         public bool useLocalTransform;
 
         public bool onlyOrigin;
 
         public float localTransformMultiplicativeFactor;
 
+        private bool _scalingRayActive = false;
+
         public ScaleManager scaleManager;
+
+        public LineRenderer scalingRay;
 
         public override void Awake()
         {
@@ -69,6 +75,9 @@ namespace VRLive.Runtime.Player.Local
             
             // this is a custom edit to hack around the fact that scale always gets set to zero when we're working with slimevr
             vmcHandler.IgnoreRootScaleOffset = true;
+
+            scalingRay = gameObject.AddComponent<LineRenderer>();
+            scalingRay.alignment = LineAlignment.TransformZ;
 
             // vmcHandler.Scale
             // }
@@ -136,6 +145,7 @@ namespace VRLive.Runtime.Player.Local
 
             if (rootRotation)
             {
+	            // this works best when set to the xr origin's rotation by default, since it only rotates on snap turns.
 	            vmcHandler.RootRotationTransform.localRotation = rootRotation.transform.rotation;
             }
 
@@ -146,6 +156,23 @@ namespace VRLive.Runtime.Player.Local
 
             if (scaleManager)
             {
+	            // if (scaleManager.scaling)
+	            // {
+		           //  if (!scalingRay.enabled)
+		           //  {
+			          //   scalingRay.enabled = true;
+		           //  }
+		           //  scalingRay.SetPosition(0, manager.xrOrigin.Camera.transform.position);
+		           //  scalingRay.SetPosition(1, manager.xrOrigin.Camera.transform.position + Vector3.forward * 5);
+	            // }
+	            // else
+	            // {
+		           //  if (scalingRay.enabled)
+		           //  {
+			          //   scalingRay.enabled = false;
+		           //  }
+	            // }
+	            
 	            gameObject.transform.localScale = Vector3.one * Math.Min(Math.Max(scaleManager.ScaledValue, 0.7f), 5.0f);
             }
             

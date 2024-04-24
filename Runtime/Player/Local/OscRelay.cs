@@ -21,6 +21,8 @@ namespace VRLive.Runtime.Player.Local
 
         protected ConcurrentQueue<VRTPData> incomingData;
 
+        public int currentDataPressure;
+
         private bool _sendActive = false;
         private Thread _sendThread;
 
@@ -42,6 +44,11 @@ namespace VRLive.Runtime.Player.Local
         public void Enqueue(VRTPData data)
         {
             incomingData.Enqueue(data);
+        }
+
+        public void Update()
+        {
+            currentDataPressure = incomingData.Count;
         }
         
         public void Awake()

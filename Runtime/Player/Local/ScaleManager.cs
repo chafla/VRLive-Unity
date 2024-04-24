@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace VRLive.Runtime.Player.Local
 {
@@ -32,7 +33,11 @@ namespace VRLive.Runtime.Player.Local
         /// </summary>
         public float bakedScale;
 
-        public float ScaledValue => bakedScale + activeScaling;
+        public float minValue = 0.7f;
+
+        public float maxValue = 5.0f;
+
+        public float ScaledValue => Math.Min(Math.Max(bakedScale + activeScaling, minValue), maxValue);
         
 
         /// <summary>
@@ -44,6 +49,7 @@ namespace VRLive.Runtime.Player.Local
 
         public void Awake()
         {
+            bakedScale = minValue;
             inputData = GetComponent<HMDInputData>() ?? gameObject.AddComponent<HMDInputData>();
             lControllerPos = Vector3.zero;
             rControllerPos = Vector3.zero;
@@ -52,6 +58,10 @@ namespace VRLive.Runtime.Player.Local
             {
                 _useOculusConfig = true;
             }
+            
+            #if OCULUS
+             _useOculusConfig = true;
+            #endif
         }
         
         public void Update()

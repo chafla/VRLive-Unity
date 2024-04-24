@@ -82,7 +82,7 @@ namespace VRLive.Runtime
             }
             
             var bufDecoded = Encoding.UTF8.GetString(buf[..bytesIn]);
-            var syn = JsonUtility.FromJson<HandshakeSyn>(bufDecoded);
+            var syn = JsonUtility.FromJson<HandshakeAck>(bufDecoded);
             
             // build our response
             var handshakeSynAck = new HandshakeSynack(UserType, syn.user_id, LocalPorts, Identifier, null);
@@ -128,7 +128,7 @@ namespace VRLive.Runtime
         public Dictionary<string, ushort> ExtraServerPorts;
         public List<AdditionalUser> OtherUsers;
         
-        public HandshakeResult(HandshakeSyn syn, HandshakeCompletion comp)
+        public HandshakeResult(HandshakeAck syn, HandshakeCompletion comp)
         {
             userId = syn.user_id;
             serverIdentifier = syn.server_identifier;
@@ -154,22 +154,13 @@ namespace VRLive.Runtime
 
    
     [Serializable]
-    public class HandshakeSyn
+    public class HandshakeAck
     {
         public ushort user_id;
         public string server_identifier;
         public ServerPortMap server_ports;
     }
     
-
-    [Serializable]
-    public struct HandshakeAck
-    {
-        public UserType user_id;
-        public string server_pretty_identifier;
-        public ServerPortMap ports;
-    }
-
     [Serializable]
     public struct HandshakeSynack
     {

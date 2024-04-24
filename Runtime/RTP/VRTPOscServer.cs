@@ -27,6 +27,7 @@ namespace RTP
 
         private bool _active = false;
 
+        public Dictionary<string, string> mappings = new Dictionary<string, string>();
         // [DoNotSerialize]
         // private new int port;
         
@@ -38,6 +39,13 @@ namespace RTP
             purgeMocapPressureIfGreaterThan = 10;
             maxPacketsPerFrame = 2;
             #endif
+        }
+
+        void buildStringMappings()
+        {
+            mappings.Add("head", "Head");
+            mappings.Add("1", "Spine");
+            mappings.Add("4", "LeftAnkle");
         }
         
         void OnEnable()

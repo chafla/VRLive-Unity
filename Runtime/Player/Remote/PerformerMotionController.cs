@@ -38,6 +38,8 @@ namespace VRLive.Runtime.Player
                 vmcHandler.RootPositionTransform = tf;
                 vmcHandler.RootRotationTransform = tf;
             }
+
+            vmcHandler.dontAdjustPositionWithScale = true;
             
             checkRawData = true;
 

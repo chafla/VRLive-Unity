@@ -125,10 +125,13 @@ namespace VRLive.Runtime
             
             #endif
             
-            #if CONNECT_MAIN_SERVER_PORT
+            #if SERVER_HOST_DESKTOP
             
             hostSettings.remoteIP = "129.21.149.239";
             
+            #elif SERVER_HOST_LAPTOP
+            
+            hostSettings.remoteIP = "129.21.72.114";
             #endif
 
             HandshakeManager = new HandshakeManager(hostSettings.HandshakeEndPoint(), localPorts, localUserType, clientIdentifier);

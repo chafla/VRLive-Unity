@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityOpus;
 
@@ -14,21 +16,38 @@ namespace RTP
 
         public bool Started { get; }
 
+        public double dspTime;
+
+        public AudioSource source;
+        
+        // public List<float[]>
+
         const int audioClipLength = 1024 * 6;
 
         private float[] audioClipData;
 
         private int head;
         
+        // public ConcurrentQueue<float[]>
+
+        public Queue<(float[], double)> audioDataUnprocessed;
+
+        public double maxTimeInQueue = 0.05;
+
+        public int unprocessedPressure;
+        
 
 
         private AudioClip _clip;
 
+        // we need an audiosource for the filterread event to proc
         public AudioSource outputSpeaker;
 
         public void Awake()
         {
+            audioDataUnprocessed = new Queue<(float[], double)>();
             Listener = GetComponent<RTPListener>();
+            source = gameObject.AddComponent<AudioSource>();
             var dummy = AudioClip.Create ("dummy", 1, 1, AudioSettings.outputSampleRate, false);
 
             // dummy.SetData(new float[] { 1 }, 0);
@@ -40,6 +59,13 @@ namespace RTP
             //
             // outputSpeaker.clip = _clip;
             // outputSpeaker.Play();
+            
+            // Listener.OnNewData += (sender, packet) => 
+        }
+
+        public void onNewData(object sender, VRTPPacket pkt)
+        {
+            
         }
 
         private void Start()
@@ -86,37 +112,88 @@ namespace RTP
             }
         }
         
+        // https://www.reddit.com/r/Unity3D/comments/ag4cji/how_does_onaudiofilterread_works/
         private void OnAudioFilterRead(float[] audioFilterData, int channelCount)
         {
+            dspTime = AudioSettings.dspTime;
             VRTPData data;
+            List<(float[], double)> packets = new List<(float[], double)>();
+            foreach ((var pkt, var time) in audioDataUnprocessed)
+            {
+                if (dspTime - time > maxTimeInQueue)
+                {
+                    continue;
+                }
+                packets.Add((pkt, time));
+            }
+            // (audioDataUnprocessed);
+            audioDataUnprocessed.Clear();
             float[] pcmOut = new float[960 * Listener.AudioDataIn.Count];
+            var startTime = DateTime.Now;
             while (!Listener.AudioDataIn.IsEmpty)
             {
                 Listener.AudioDataIn.TryDequeue(out data);
                 pcmOut = new float[960];
-                
+
+               
                 var dataOut = Decoder.Decode(data.Payload, data.Payload.Length, pcmOut);
                 if (dataOut < 0)
                 {
                     throw new Exception($"Opus Error {dataOut}");
                 }
                 
+                packets.Add((pcmOut, dspTime));
+
+                
                 // OnDecoded(pcmOut, dataOut);
             }
-            
-            for (int i = 0; i < audioFilterData.Length; i++)
+            var endTime = DateTime.Now - startTime;
+            // Debug.Log($"Decoding data took {endTime.TotalMilliseconds}");
+
+            var saveForLater = false;
+            int filterIx = 0;
+            foreach (var packet in packets)
             {
-                if (i >= pcmOut.Length)
+                if (saveForLater)
                 {
-                    audioFilterData[i] = 0;
+                    audioDataUnprocessed.Enqueue(packet);
+                    continue;
                 }
-                else
+                for (int i = 0; i < packet.Item1.Length; i++)
                 {
-                    audioFilterData[i] = pcmOut[i];
+                    if (saveForLater)
+                    {
+                        break;
+                    }
+                    for (int j = 0; j < channelCount; j++)
+                    {
+                        audioFilterData[filterIx++] = packet.Item1[i];
+                        if (filterIx >= audioFilterData.Length - 1)
+                        {
+                            audioDataUnprocessed.Enqueue((packet.Item1[i..], dspTime));
+                            saveForLater = true;
+                            break;
+                        }
+                    }
                 }
-                
-                
             }
+           
+
+            for (int i = filterIx; i < audioFilterData.Length; i++)
+            {
+                audioFilterData[i] = 0;
+            }
+            // double data based on the number of channels: our audio is mono
+            // for (int i = 0; i < pcmOut.Length * channelCount && i < audioFilterData.Length; i++)
+            // {
+            //         for (int j = 0; j < channelCount; j++)
+            //         {
+            //             audioFilterData[j] = pcmOut[i];
+            //         }
+            //         
+            //     }
+            //
+            // }
             // FillBuffer(data, channelCount);
         }
         
@@ -124,6 +201,7 @@ namespace RTP
 
         private void Update()
         {
+            unprocessedPressure = audioDataUnprocessed.Count;
             // VRTPData data;
             // float[] pcmOut;
             // while (!Listener.AudioDataIn.IsEmpty)
@@ -137,7 +215,7 @@ namespace RTP
             //     }
             //     OnDecoded(pcmOut, dataOut);
             // }
-            
+
         }
 
         private void OnDisable()

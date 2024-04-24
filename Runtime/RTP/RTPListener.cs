@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityOpus;
 
@@ -32,6 +33,14 @@ namespace RTP
         protected Decoder Decoder;
 
         protected Thread NetworkThread;
+
+        [DoNotSerialize]
+        public int mocapPacketsQueued;
+
+        [DoNotSerialize]
+        public int audioPacketsQueued;
+
+        public int purgeAfterNPacketsPressure = 1000;
         
         public bool Running { get; private set; }
 
@@ -46,6 +55,22 @@ namespace RTP
             if (startOnAwake)
             {
                 StartServer();
+            }
+        }
+
+        public void Update()
+        {
+            mocapPacketsQueued = MocapDataIn.Count;
+            audioPacketsQueued = AudioDataIn.Count;
+
+            if (mocapPacketsQueued > purgeAfterNPacketsPressure)
+            {
+                MocapDataIn.Clear();
+            }
+
+            if (audioPacketsQueued > purgeAfterNPacketsPressure)
+            {
+                AudioDataIn.Clear();
             }
         }
 
@@ -157,9 +182,9 @@ namespace RTP
                 else
                 {
                     var time = System.DateTime.Now;
-                    if ((time - lastMessageTime).Milliseconds > messageFrequencyMs)
+                    if ((time - lastMessageTime).TotalMilliseconds > messageFrequencyMs)
                     {
-                        Debug.Log($"Over last {time - lastMessageTime}: {bytesSeen} bytes, {packetsSeen} packets");
+                        Debug.Log($"{label} Over last {time - lastMessageTime} on {listeningPort}: {bytesSeen} bytes, {packetsSeen} packets");
                         lastMessageTime = time;
                         packetsSeen = 0;
                         bytesSeen = 0;

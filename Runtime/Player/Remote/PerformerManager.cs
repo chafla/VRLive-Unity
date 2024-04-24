@@ -21,7 +21,7 @@ namespace VRLive.Runtime.Player
         // The osc "server" responsible for sending the bone data to the vrm model
         // public VRTPOscServer oscServer;
 
-        public RTPAudioListenerComponentized audioListener;
+        public RTPAudioListenerStreaming audioListener;
         
         
         
@@ -43,7 +43,7 @@ namespace VRLive.Runtime.Player
             // we already have an RTP listener active so we can just start using this one
             // oscServer = gameObject.AddComponent<VRTPOscServer>();
             // oscServer.mocapDataIn = listener.MocapDataIn;  // link the two queues together, the server just needs the messages
-            audioListener = gameObject.AddComponent<RTPAudioListenerComponentized>();
+            audioListener = gameObject.AddComponent<RTPAudioListenerStreaming >();
             audioListener.Listener = listener;
         }
         
