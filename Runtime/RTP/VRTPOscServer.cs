@@ -17,7 +17,7 @@ namespace RTP
         private Parser _parser;
         public ConcurrentQueue<VRTPData> mocapDataIn;
 
-        public int filterNPackets = 2;
+        public int filterNPackets = 0;
 
         public int maxPacketsPerFrame = 500;
 
@@ -38,6 +38,7 @@ namespace RTP
             Debug.LogWarning("The purge is aggressive! Mocap performance will be limited.");
             purgeMocapPressureIfGreaterThan = 10;
             maxPacketsPerFrame = 2;
+            filterNPackets = 3;
             #endif
         }
 
@@ -59,6 +60,7 @@ namespace RTP
             else
             {
                 mocapDataIn = new ConcurrentQueue<VRTPData>();
+                Debug.LogError($"OSC server on {gameObject} not connected to any listener on startup!");
             }
             _active = true;
         }
@@ -91,9 +93,16 @@ namespace RTP
             // }
             var packetsRead = 0;
             
+            // Debug.Log($"Started parsing mocap data at {Time.time}");
+            
             // Debug.Log($"Incoming mocap pressure: {Listener.MocapDataIn.Count}");
             while (_active && !mocapDataIn.IsEmpty && packetsRead++ < maxPacketsPerFrame)
             {
+                if (filterNPackets > 0 && packetsRead % filterNPackets == 0)
+                {
+                    continue;
+                }
+                // Debug.Log($"Started parsing mocap data with {mocapDataIn.Count} mocap items left");
                 // if (filterNPackets != 0 && packetsRead % filterNPackets != 0)
                 // {
                 //     continue;
@@ -137,6 +146,8 @@ namespace RTP
                 
                 
             }
+            
+            // Debug.Log($"Finished parsing mocap data at {Time.time}");
 
             #if DEBUG_MOCAP_PRESSURE
             if (packetsRead >= maxPacketsPerFrame)

@@ -36,7 +36,7 @@ namespace VRLive.Runtime.Player.Local.SlimeVR
 
         private Thread _thread;
 
-        private ConcurrentQueue<VRTPData> oscDataOut;
+        // private ConcurrentQueue<VRTPData> oscDataOut;
 
         public ConcurrentQueue<MocapData> mocapDataIn;
         
@@ -92,6 +92,9 @@ namespace VRLive.Runtime.Player.Local.SlimeVR
                     
                     
                 }
+                
+                // 20ms corresponds to 45 tps
+                Thread.Sleep(20);
             }
         }
 
@@ -102,7 +105,7 @@ namespace VRLive.Runtime.Player.Local.SlimeVR
 
         public void Awake()
         {
-            oscDataOut = new ConcurrentQueue<VRTPData>();
+            // oscDataOut = new ConcurrentQueue<VRTPData>();
             mocapDataIn = new ConcurrentQueue<MocapData>();
         }
 

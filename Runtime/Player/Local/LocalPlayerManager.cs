@@ -120,6 +120,8 @@ namespace VRLive.Runtime.Player
             if (localUser)
             {
                 localUser.oscRelay = relay;
+                // just to be safe I guess?
+                localUser.manager = this;
                 localUser.OnHandshake();
             }
         }

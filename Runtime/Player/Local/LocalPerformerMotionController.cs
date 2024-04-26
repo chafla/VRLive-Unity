@@ -45,7 +45,7 @@ namespace VRLive.Runtime.Player.Local
             SlimeVRMessageProcessor.DisableDefaultCutBones(vmcHandler);
             
 
-            if (manager.cutHandBones)
+            if (manager && manager.cutHandBones)
             {
                 vmcHandler.CutBonesEnable = true;
                 SlimeVRMessageProcessor.CutUnnecessaryBones(vmcHandler);
@@ -65,6 +65,16 @@ namespace VRLive.Runtime.Player.Local
 
             // _sendFromOscServerPrevious = sendFromOscServerToRelay;
 
+        }
+
+        public override void OnHandshake()
+        {
+            base.OnHandshake();
+            if (manager.cutHandBones)
+            {
+                vmcHandler.CutBonesEnable = true;
+                SlimeVRMessageProcessor.CutUnnecessaryBones(vmcHandler);
+            }
         }
 
         public override void Update()

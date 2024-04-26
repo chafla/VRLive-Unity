@@ -28,7 +28,7 @@ namespace VRLive.Runtime.Player.Local
 
         public float localTransformMultiplicativeFactor;
 
-        private bool _scalingRayActive = false;
+        // private bool _scalingRayActive = false;
 
         public ScaleManager scaleManager;
 
@@ -44,7 +44,7 @@ namespace VRLive.Runtime.Player.Local
             scaleManager = GetComponent<ScaleManager>() ?? gameObject.AddComponent<ScaleManager>();
 
             // turns out this is the best way to track the root transform, who'd have thunk
-            rootTransform = manager.xrOrigin.transform;
+            
             
             // var headTf = animator.GetBoneTransform(HumanBodyBones.Head);
             // gameObject.transform.position = manager.xrOrigin.Camera.gameObject.transform.position;// + new Vector3(0, eyeYOffset, 0);
@@ -76,11 +76,17 @@ namespace VRLive.Runtime.Player.Local
             // this is a custom edit to hack around the fact that scale always gets set to zero when we're working with slimevr
             vmcHandler.IgnoreRootScaleOffset = true;
 
-            scalingRay = gameObject.AddComponent<LineRenderer>();
-            scalingRay.alignment = LineAlignment.TransformZ;
+            // scalingRay = gameObject.AddComponent<LineRenderer>();
+            // scalingRay.alignment = LineAlignment.TransformZ;
 
             // vmcHandler.Scale
             // }
+        }
+
+        public override void OnHandshake()
+        {
+	        base.OnHandshake();
+	        rootTransform = manager.xrOrigin.transform;
         }
 
         public override void UpdateReturner()
@@ -132,10 +138,6 @@ namespace VRLive.Runtime.Player.Local
 		            // this isn't always set the first time we hit it so better safe than sorry
 		            vmcHandler.RootPositionTransform.localPosition = tf;
 	            }
-	            
-
-
-
             }
 
             if (onlyOrigin)
@@ -156,47 +158,12 @@ namespace VRLive.Runtime.Player.Local
 
             if (scaleManager)
             {
-	            // if (scaleManager.scaling)
-	            // {
-		           //  if (!scalingRay.enabled)
-		           //  {
-			          //   scalingRay.enabled = true;
-		           //  }
-		           //  scalingRay.SetPosition(0, manager.xrOrigin.Camera.transform.position);
-		           //  scalingRay.SetPosition(1, manager.xrOrigin.Camera.transform.position + Vector3.forward * 5);
-	            // }
-	            // else
-	            // {
-		           //  if (scalingRay.enabled)
-		           //  {
-			          //   scalingRay.enabled = false;
-		           //  }
-	            // }
+	         
 	            
 	            gameObject.transform.localScale = Vector3.one * Math.Min(Math.Max(scaleManager.ScaledValue, 0.7f), 5.0f);
             }
             
-            // gameObject.transform.position = manager.xrOrigin.Camera.transform.position;// + new Vector3(0, eyeYOffset, 0);
-            // }
         }
-
-        // public void InterceptBuffer()
-        // {
-	       //  var bundle = new Bundle();
-	       //  bundle.Add(new Message(
-		      //   RootPosVRM,
-		      //   new object[]
-		      //   {
-			     //    "root", OriginPos.x, OriginPos.y, OriginPos.z, OriginRot.x, OriginRot.y, OriginRot.z, OriginRot.w, Scale.x, Scale.y, Scale.z, 0, 0, 0
-		      //   }));
-        // }
-
-        // public void OnAnimatorIK(int layerIndex)
-        // {
-        //     return;
-        //     // throw new NotImplementedException();
-        // }
-        
         
             public class VMCMocapData : SlimeVRMocapReturner.MocapData
             {

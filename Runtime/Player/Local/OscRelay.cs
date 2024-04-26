@@ -103,7 +103,8 @@ namespace VRLive.Runtime.Player.Local
                         Debug.LogException(e);
                         break;
                     }
-
+                    // If we get into a failure loop, don't let it take down our whole application
+                    Thread.Sleep(50);
                     continue;
                 }
 
@@ -121,7 +122,7 @@ namespace VRLive.Runtime.Player.Local
         {
             // how far to look for our bundle before giving up
             var maxBytesToSearch = 50;
-            var noTimestamp = true;
+            // var noTimestamp = true;
             var noInnerTimestamp = false;
             for (int i = 0; i < data.PayloadSize - _bundleIntro.Length && i < maxBytesToSearch; i++)
             {
@@ -249,6 +250,9 @@ namespace VRLive.Runtime.Player.Local
                     //     b = new Bundle();
                     // }
                 }
+                
+                // 100 tps. Should be plenty to keep up with data coming in?
+                Thread.Sleep(10);
             }
         }
     }

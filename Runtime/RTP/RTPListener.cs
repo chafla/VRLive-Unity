@@ -172,6 +172,8 @@ namespace RTP
 
                     continue;
                 }
+                
+                // Debug.Log("Got new data from RTP listener.");
 
                 bytesSeen += bytesIn;
                 packetsSeen++;

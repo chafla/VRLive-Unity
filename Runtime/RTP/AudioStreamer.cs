@@ -272,6 +272,9 @@ namespace RTP
                     
                 }
             }
+            
+            // we want this tight but since we should be getting 20ms of audio we don't want this to fall behind
+            Thread.Sleep(1);
         }
 
         private void Update()

@@ -59,15 +59,8 @@ namespace RTP
         private void Update()
         {
             VRTPData data;
-            float[] pcmOut;
             while (Listener.AudioDataIn.TryDequeue(out data))
             {
-                // pcmOut = new float[48000];
-                // var dataOut = Decoder.Decode(data.Payload, data.Payload.Length, pcmOut);
-                // if (dataOut < 0)
-                // {
-                //     throw new Exception($"Opus Error {dataOut}");
-                // }
                 OnNewData(data);
             }
             

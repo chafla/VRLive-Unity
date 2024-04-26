@@ -70,17 +70,6 @@ namespace VRLive.Runtime.Player.Local
             // // manager.xrOrigin.Origin = gameObject;
             // headTpd = tpd;
         }
-
-        public Vector3 WorldSpaceToOriginSpacePosition(Vector3 worldPosition)
-        {
-            return manager.xrOrigin.Origin.transform.InverseTransformPoint(worldPosition);
-        }
-
-        public Quaternion WorldSpaceToOriginSpaceRotation(Quaternion worldRotation)
-        {
-            return Quaternion.Inverse(manager.xrOrigin.Origin.transform.rotation) *
-                   worldRotation;
-        }
         
         /// <summary>
         /// Take our current controller and HMD values and package them up as slimeVR data
