@@ -19,6 +19,19 @@ namespace VRLive.Runtime
         {
             base.Awake();
             callbacks["NEWTRACK"] = OnSockData;
+            CleanUpExistingBackingTracks();
+        }
+        
+        /// <summary>
+        /// Clean up any existing backing track files
+        /// </summary>
+        public void CleanUpExistingBackingTracks()
+        {
+            foreach (var file in System.IO.Directory.GetFiles(_tempDir, "backing*"))
+            {
+                File.Delete(file);
+                Debug.Log($"Deleting existing backing track {file}");
+            }
         }
 
         private BackingTrackData OnSockData(string messageType, Socket conn, ushort headerLen, uint bodyLen)
@@ -32,12 +45,12 @@ namespace VRLive.Runtime
             // read in the title
             buf = new byte[titleLen];
             conn.Receive(buf);
-            string title = System.Text.Encoding.UTF8.GetString(buf);
+            var title = System.Text.Encoding.UTF8.GetString(buf);
             Debug.LogWarning($"New backing track incoming: {title}, {bodyLen} bytes.");
 
             // var fileName = FileUtil.GetUniqueTempPathInProject();
             // var fileName = Path.Join(_tempDir, title);
-            var fileName = Path.Join(_tempDir, DateTime.Now.Millisecond + title);
+            var fileName = Path.Join(_tempDir, ($"backing_{ DateTime.Now.Millisecond + title}"));
             
             // var fp = File.OpenWrite(fileName);
             
@@ -70,9 +83,9 @@ namespace VRLive.Runtime
             
             }
             
-            File.WriteAllBytes(fileName, buf);
+            File.WriteAllBytes(fileName, outBuf);
             
-            var data = new BackingTrackData(fileName, buf);
+            var data = new BackingTrackData(fileName, outBuf);
                 
             Debug.LogWarning($"new tcp message of length {outBuf.Length} written out to {fileName}");
             

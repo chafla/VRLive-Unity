@@ -33,6 +33,15 @@ namespace RTP
             rtpPacket[6] = ((byte)((ts >> 8) & 0xFF));
             rtpPacket[7] = ((byte)((ts >> 0) & 0xFF));
         }
+        
+        public static void WriteTS(byte[] rtpPacket, float ts)
+        {
+            var floatBytes = System.BitConverter.GetBytes(ts);
+            rtpPacket[4] = floatBytes[0];
+            rtpPacket[5] = floatBytes[1];
+            rtpPacket[6] = floatBytes[2];
+            rtpPacket[7] = floatBytes[3];
+        }
 
         public static void WriteSSRC(byte[] rtpPacket, uint ssrc)
         {

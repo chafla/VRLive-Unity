@@ -326,6 +326,7 @@ namespace VRLive.Runtime
             performerManager.listenPort = localPorts.vrtp_data;
             performerManager.clientUserId = clientUserId;
             performerManager.backingTrackManager = backingTrackManager;
+            backingTrackManager.userType = localUserType;
             performerManager.listener.OnNewData += backingTrackManager.OnNewVRTPPacket;
 
         }

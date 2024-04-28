@@ -20,6 +20,7 @@ namespace RTP
 
     public class AudioStreamer : MonoBehaviour
     {
+        public static DateTime epoch = DateTime.UnixEpoch;
         /// <summary>
         /// The base length of the RTP header field, not accounting for extensions
         /// </summary>
@@ -123,7 +124,8 @@ namespace RTP
                 , 1 // marker, set to one for last packet
                 , 96); // payload_type PCM 16bits BE signed
             RtpPacket.WriteSequenceNumber(rtpPacket, sequenecId);
-            RtpPacket.WriteTS(rtpPacket, Convert.ToUInt32(DateTime.Now.Millisecond * 90));
+            var secs = (DateTime.UtcNow - epoch).TotalSeconds;
+            RtpPacket.WriteTS(rtpPacket, (uint) secs);
             RtpPacket.WriteSSRC(rtpPacket, 0);
             // our addition
             // if (backingTrackManager)

@@ -33,7 +33,6 @@ namespace VRLive.Runtime.Player.Local
 
         protected Parser _parser;
         
-        private static byte[] _bundleIntro = Encoding.UTF8.GetBytes("#bundle");
 
         /// <summary>
         /// If true, the timestamp of transmission will be marked as the true "mocap timestamp".
@@ -75,6 +74,7 @@ namespace VRLive.Runtime.Player.Local
         {
             var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             socket.ReceiveTimeout = 5000;
+            socket.Blocking = true;
             
             // socket.Bind(new IPEndPoint(new IPAddress(0), listeningPort));
             byte[] buf;
@@ -101,83 +101,21 @@ namespace VRLive.Runtime.Player.Local
                     if (e.SocketErrorCode != SocketError.TimedOut)
                     {
                         Debug.LogException(e);
-                        break;
+                        // break;
                     }
+
                     // If we get into a failure loop, don't let it take down our whole application
-                    Thread.Sleep(50);
                     continue;
+                }
+                finally
+                {
+                    Thread.Sleep(50);
                 }
 
                 var vrtpData = new VRTPData((ushort) bytesIn, buf[..bytesIn], 0);
                 OnNewMessage?.Invoke(this, vrtpData);
                 incomingData.Enqueue(vrtpData);
             }
-            
-        }
-
-        /// <summary>
-        /// Inject a timestamp into the first (and hopefully top-level) OSC bundle.
-        /// </summary>
-        public void injectTimestamp(VRTPData data)
-        {
-            // how far to look for our bundle before giving up
-            var maxBytesToSearch = 50;
-            // var noTimestamp = true;
-            var noInnerTimestamp = false;
-            for (int i = 0; i < data.PayloadSize - _bundleIntro.Length && i < maxBytesToSearch; i++)
-            {
-                // check linearly to find #bundle
-                for (int j = 0; j < _bundleIntro.Length; j++)
-                {
-                    if (data.Payload[i + j] != _bundleIntro[j])
-                    {
-                        noInnerTimestamp = true;
-                        break;
-                    }
-                }
-
-                if (noInnerTimestamp)
-                {
-                    continue;
-                }
-                
-                
-                // get the starting index of our timetag
-                // it starts one character after the bundle intro
-                var timetagPos = i + _bundleIntro.Length + 1;
-                // 64 big-endian fixed point time tag
-                // first 32 bits are for the epoch seconds
-                // last 32 bits are for fractional seconds (2<<32 would technically be 1.0)
-
-                // var curTime = DateTime.Now;
-                
-                
-                // https://stackoverflow.com/a/21055459
-                // this method gets us fractional seconds as well
-                // also note that according to the spec it's time since 1/1/1900
-                var timeSpan = DateTime.UtcNow - new DateTime(1900, 1, 1, 0, 0, 0);
-                var timeSeconds = timeSpan.TotalSeconds;
-                var timeSecsTrunc = (uint)timeSeconds;  // this may lose some precision after 2038 be warned
-                var fracSecs = timeSeconds - timeSecsTrunc;
-                var fracSecsTotal = fracSecs * (0x100000000);
-
-                var fracSecsBytes = BitConverter.GetBytes((uint)fracSecsTotal);
-                var totalSecsBytes = BitConverter.GetBytes(timeSecsTrunc);
-
-                if (BitConverter.IsLittleEndian)
-                {
-                    Array.Reverse(fracSecsBytes);
-                    Array.Reverse(totalSecsBytes);
-                }
-                
-                Array.Copy(totalSecsBytes, 0, data.Payload, timetagPos, totalSecsBytes.Length);
-                Array.Copy(fracSecsBytes, 0, data.Payload, timetagPos + 4, fracSecsBytes.Length);
-                return;
-
-
-            }
-            
-            Debug.LogWarning("Could not find a #bundle tag in parsed OSC message.");
             
         }
 
@@ -229,7 +167,7 @@ namespace VRLive.Runtime.Player.Local
                 {
                     if (shouldInjectTimestamp)
                     {
-                       injectTimestamp(data);
+                       data.InjectTimestamp();
                     }
                     ProcessData(ref data);
                     
@@ -252,7 +190,7 @@ namespace VRLive.Runtime.Player.Local
                 }
                 
                 // 100 tps. Should be plenty to keep up with data coming in?
-                Thread.Sleep(10);
+                Thread.Sleep(5);
             }
         }
     }

@@ -23,8 +23,6 @@ namespace VRLive.Runtime.Player
 
         public RTPAudioListenerStreaming audioListener;
         
-        
-        
         public override void OnEnable()
         {
             base.OnEnable();
@@ -68,6 +66,12 @@ namespace VRLive.Runtime.Player
             var newObj = Instantiate(baseModel);
             // newObj.transform.position = Vector3.zero;
             var comp = newObj.GetComponent<PerformerMotionController>() ?? newObj.AddComponent<PerformerMotionController>();
+// #if WAIT_FOR_BACKING_AUDIO
+            // it's added by default in the initializer, but checks to see if we've already added one
+            comp.server = comp.gameObject.AddComponent<VRTPOscServer>();
+            comp.server.backingManager = backingTrackManager;
+            comp.server.waitForBackingTrack = true;
+// #endif
             newObj.SetActive(true);
             comp.parent = this;
             comp.userId = userId;

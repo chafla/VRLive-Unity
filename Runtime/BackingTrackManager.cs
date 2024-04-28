@@ -1,5 +1,7 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using RTP;
 using UnityEngine;
@@ -19,7 +21,16 @@ namespace VRLive.Runtime
 
         private BackingTrackData? _pendingBackingTrack;
 
+        public UserType userType;
+
         public ServerEventManager serverEventManager;
+
+        public Dictionary<ushort, DateTime> remoteBackingTrackZeroTimes;
+
+        /// <summary>
+        /// Users who have a backing track currently playing.
+        /// </summary>
+        public HashSet<ushort> backingTrackInProgress;
 
         public bool playOnLoad = false;
         
@@ -30,10 +41,19 @@ namespace VRLive.Runtime
 
         public float localBackingTrackTiming;
 
+        public bool playing => source.isPlaying;
+
+        /// <summary>
+        /// The time the current backing track started at.
+        /// </summary>
+        public DateTime? backingTrackZeroTime;
+        
         public float dif;
 
         public void Awake()
         {
+            remoteBackingTrackZeroTimes = new Dictionary<ushort, DateTime>();
+            backingTrackInProgress = new HashSet<ushort>();
             Listener = gameObject.GetComponent<BackingTrackListener>();
             source = gameObject.AddComponent<AudioSource>();
             serverEventManager = gameObject.GetComponent<ServerEventManager>();
@@ -48,6 +68,26 @@ namespace VRLive.Runtime
             }
 
             Listener.NewDataAvailable += onNewBackingTrack;
+            
+            
+        }
+
+       
+
+        // We want some users to have different playback delays, particularly so that the mocap packets coming from the 
+        // performers can have time to arrive before we try to sync them up with the backing track.
+        public float GetPlaybackDelay()
+        {
+            switch (userType)
+            {
+                case UserType.Audience:
+                    return 3f;
+                case UserType.Performer:
+                    return 0f;
+                default:
+                    Debug.LogError("Invalid usertype when calculating playback delay");
+                    return -1f;
+            }
         }
 
         /// <summary>
@@ -57,16 +97,38 @@ namespace VRLive.Runtime
         /// <param name="packet"></param>
         public void OnNewVRTPPacket(object sender, VRTPPacket packet)
         {
-            // Debug.Log("aaa");
             if (packet.backingTrackPosition > 0)
             {
-                remoteBackingTrackTiming = packet.backingTrackPosition;
+                backingTrackInProgress.Add(packet.UserID);
+                return;
+            }
+            // Debug.Log("aaa");
+            if (packet.OSCSize > 0 && backingTrackInProgress.Contains(packet.UserID) && !remoteBackingTrackZeroTimes.ContainsKey(packet.UserID))
+            {
+                var timestamp = packet.OSC.ExtractTimestamp();
+                if (timestamp is { Year: > 1970 })
+                {
+                    remoteBackingTrackZeroTimes[packet.UserID] = timestamp.Value;
+                    Debug.Log($"{packet.UserID} marked their timestamp as {timestamp}");
+                }
+                   
+                // remoteBackingTrackTiming = packet.backingTrackPosition;
 
                 dif = remoteBackingTrackTiming - localBackingTrackTiming;
             }
 
             
            
+        }
+
+        public void UpdateRemoteBackingTrackPosition(ushort userId, DateTime backingPosition)
+        {
+            remoteBackingTrackZeroTimes[userId] = backingPosition;
+        }
+
+        public void UpdateRemoteBackingTrackPosition(VRTPData data)
+        {
+            remoteBackingTrackZeroTimes[data.UserID] = data.ExtractTimestamp() ?? DateTime.MinValue;
         }
 
         public void Update()
@@ -85,6 +147,7 @@ namespace VRLive.Runtime
             if (!source.isPlaying)
             {
                 source.Play();
+                backingTrackZeroTime = DateTime.Now;
             }
             
         }
@@ -92,6 +155,10 @@ namespace VRLive.Runtime
         public void Stop()
         {
             source.Stop();
+            backingTrackZeroTime = null;
+            remoteBackingTrackZeroTimes.Clear();
+            backingTrackInProgress.Clear();
+            localBackingTrackTiming = 0;
         }
 
         public void onNewBackingTrack(object ls, ConcurrentQueue<BackingTrackData> queue)
@@ -108,12 +175,15 @@ namespace VRLive.Runtime
             switch (msg.address)
             {
                 case "/server/backing/stop":
-                    source.Stop();
+                    Stop();
                     break;
                 case "/server/backing/start":
                     var startPoint = (int)msg.values[0];
+                    var delay = GetPlaybackDelay();
+                    Debug.Log($"Starting audio track at {startPoint} after {delay} seconds");
                     source.timeSamples = startPoint;
-                    source.Play();
+                    
+                    Invoke(nameof(Play), delay);
                     break;
                 default:
                     // do nothing if this doesn't pertain to us

@@ -18,6 +18,8 @@ namespace VRLive.Runtime.Player
         public int userId;
 
         public ConcurrentQueue<VRTPPacket> messages;
+
+        public int messagePressure;
         
         private Parser _parser;
 
@@ -40,30 +42,35 @@ namespace VRLive.Runtime.Player
         {
             VRTPPacket msg;
             // var now = DateTime.Now;
+            messagePressure = messages.Count;
             while (messages.TryDequeue(out msg))
             {
                 {
                    
                     var pos = 0;
                     Message res;
-                    if (checkRawData)
+                    if (msg.OSCSize > 0)
                     {
-                        OnNewRawMocapData(msg.OSC);
-                    }
-                    else
-                    {
-                        // parse may add more than one message so make sure we purge em all
-                        _parser.Parse(msg.OSCBytes, ref pos, msg.OSCBytes.Length);
-                    
-                    
-                        while ((res = _parser.Dequeue()).address != "")  // see Message.none
+                        if (checkRawData)
                         {
-                            OnNewMocapData(res);
+                            OnNewRawMocapData(msg.OSC);
+                        }
+
+                        else
+                        {
+                            // parse may add more than one message so make sure we purge em all
+                            _parser.Parse(msg.OSCBytes, ref pos, msg.OSCBytes.Length);
+
+
+                            while ((res = _parser.Dequeue()).address != "") // see Message.none
+                            {
+                                OnNewMocapData(res);
+                            }
                         }
                     }
-                    
-                    
-                    
+
+
+
                     if (msg.AudioSize > 0)
                     {
                         OnNewAudioData(msg.Audio);
