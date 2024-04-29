@@ -27,6 +27,10 @@ namespace VRLive.Runtime
 
         public Dictionary<ushort, DateTime> remoteBackingTrackZeroTimes;
 
+        public event EventHandler OnBackingTrackPlay;
+
+        public event EventHandler OnBackingTrackStop;
+
         /// <summary>
         /// Users who have a backing track currently playing.
         /// </summary>
@@ -148,6 +152,7 @@ namespace VRLive.Runtime
             {
                 source.Play();
                 backingTrackZeroTime = DateTime.Now;
+                OnBackingTrackPlay?.Invoke(this, null);
             }
             
         }
@@ -159,6 +164,7 @@ namespace VRLive.Runtime
             remoteBackingTrackZeroTimes.Clear();
             backingTrackInProgress.Clear();
             localBackingTrackTiming = 0;
+            OnBackingTrackStop?.Invoke(this, null);
         }
 
         public void onNewBackingTrack(object ls, ConcurrentQueue<BackingTrackData> queue)

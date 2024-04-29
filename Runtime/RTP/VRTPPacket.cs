@@ -104,37 +104,68 @@ namespace RTP
                     continue;
                 }
 
+                // var ts = Timestamp.CreateFromDateTime(DateTime.UtcNow);
+                // uint intPart = (uint) (ts.value << 32);
+                // uint fractionalPart = (uint)ts.value;
+                // // (uint intPart, uint fractionalPart) = ((UInt32)ts.value << 32) | (uint)ts.value;
+                //
+                //
+                // // var fracSecsBytes = BitConverter.GetBytes((uint)fractionalPart);
+                // // var totalSecsBytes = BitConverter.GetBytes(intPart);
+                //
+                // if (BitConverter.IsLittleEndian)
+                // {
+                //     Array.Reverse(fracSecsBytes);
+                //     Array.Reverse(totalSecsBytes);
+                // }
+                //
+                // Array.Copy(totalSecsBytes, 0, Payload, timetagPos, totalSecsBytes.Length);
+                // Array.Copy(fracSecsBytes, 0, Payload, timetagPos + 4, fracSecsBytes.Length);
+                
 
-                // get the starting index of our timetag
-                // it starts one character after the bundle intro
-                var timetagPos = i + _bundleIntro.Length + 1;
-                // 64 big-endian fixed point time tag
-                // first 32 bits are for the epoch seconds
-                // last 32 bits are for fractional seconds (2<<32 would technically be 1.0)
+                   
+               // get the starting index of our timetag
+               // it starts one character after the bundle intro
+               var timetagPos = i + _bundleIntro.Length + 1;
+               // 64 big-endian fixed point time tag
+               // first 32 bits are for the epoch seconds
+               // last 32 bits are for fractional seconds (2<<32 would technically be 1.0)
 
-                var curTime = DateTime.UtcNow;
+               var curTime = DateTime.UtcNow;
 
 
-                // https://stackoverflow.com/a/21055459
-                // this method gets us fractional seconds as well
-                // also note that according to the spec it's time since 1/1/1900
-                var timeSpan = curTime - new DateTime(1900, 1, 1, 0, 0, 0);
-                var timeSeconds = timeSpan.TotalSeconds;
-                var timeSecsTrunc = (uint)timeSeconds; // this may lose some precision after 2038 be warned
-                var fracSecs = timeSeconds - timeSecsTrunc;
-                var fracSecsTotal = fracSecs * fractionalFactor;
+               // https://stackoverflow.com/a/21055459
+               // this method gets us fractional seconds as well
+               // also note that according to the spec it's time since 1/1/1900
+               // var timeSpan = curTime - new DateTime(1900, 1, 1, 0, 0, 0);
+               // var timeSeconds = timeSpan.TotalSeconds;
+               // var timeSecsTrunc = (uint)timeSeconds; // this may lose some precision after 2038 be warned
+               // var fracSecs = timeSeconds - timeSecsTrunc;
+               // var fracSecsTotal = fracSecs * fractionalFactor;
+               
+               
+               var ts = Timestamp.CreateFromDateTime(curTime);
+               uint intPart = (uint) (ts.value >> 32);
+               uint fractionalPart = (uint)ts.value;
+               // (uint intPart, uint fractionalPart) = ((UInt32)ts.value << 32) | (uint)ts.value;
+                
+                
+               // var fracSecsBytes = BitConverter.GetBytes((uint)fractionalPart);
+               // var totalSecsBytes = BitConverter.GetBytes(intPart);
 
-                var fracSecsBytes = BitConverter.GetBytes((uint)fracSecsTotal);
-                var totalSecsBytes = BitConverter.GetBytes(timeSecsTrunc);
+               var fracSecsBytes = BitConverter.GetBytes((uint)fractionalPart);
+               var totalSecsBytes = BitConverter.GetBytes(intPart);
 
-                if (BitConverter.IsLittleEndian)
-                {
-                    Array.Reverse(fracSecsBytes);
-                    Array.Reverse(totalSecsBytes);
-                }
+               if (BitConverter.IsLittleEndian)
+               {
+                   Array.Reverse(fracSecsBytes);
+                   Array.Reverse(totalSecsBytes);
+               }
 
-                Array.Copy(totalSecsBytes, 0, Payload, timetagPos, totalSecsBytes.Length);
-                Array.Copy(fracSecsBytes, 0, Payload, timetagPos + 4, fracSecsBytes.Length);
+               Array.Copy(totalSecsBytes, 0, Payload, timetagPos, totalSecsBytes.Length);
+               Array.Copy(fracSecsBytes, 0, Payload, timetagPos + 4, fracSecsBytes.Length);
+               
+                   
 
 #if VERIFY_TIMESTAMP
                 {
@@ -188,8 +219,13 @@ namespace RTP
                 // var fullSecs = BitConverter.ToUInt32(Payload, timetagPos + 4);
                 var fullSecs = BinaryPrimitives.ReadUInt32BigEndian(Payload[timetagPos..]);
                 var fracSecs = BinaryPrimitives.ReadUInt32BigEndian(Payload[(timetagPos + 4)..]);
+                var timestampCombined = ((ulong)fullSecs << 32) | (fracSecs & 0xFFFFFFFF); 
+                // var decimalPart = (UInt64)(value & 0xFFFFFFFF);
+                var ts = new Timestamp(timestampCombined);
 
-                double fractionalSecs = fracSecs / (double) fractionalFactor;
+                return ts.ToUtcTime();
+
+                // double fractionalSecs = fracSecs / (double) fractionalFactor;
                 // 64 big-endian fixed point time tag
                 // first 32 bits are for the epoch seconds
                 // last 32 bits are for fractional seconds (2<<32 would technically be 1.0)
@@ -197,9 +233,9 @@ namespace RTP
                 // this method gets us fractional seconds as well
                 // also note that according to the spec it's time since 1/1/1900
                 
-                var timestamp = baseTime.AddSeconds(fullSecs + fractionalSecs);
+                // var timestamp = baseTime.AddSeconds(fullSecs + fractionalSecs);
 
-                return timestamp;
+                // return timestamp;
 
 
             }

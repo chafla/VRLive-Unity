@@ -29,7 +29,7 @@ namespace RTP
         /// <summary>
         /// Mocap data that is currently waiting the backing track to catch up.
         /// </summary>
-        public Queue<(float, Message, ushort)> queuedMocap;
+        public Queue<(double, Message, ushort)> queuedMocap;
 
         public int filterNPackets = 0;
 
@@ -58,13 +58,18 @@ namespace RTP
         void Awake()
         {
             _parser = new Parser();
-            queuedMocap = new Queue<(float, Message, ushort)>();
+            queuedMocap = new Queue<(double, Message, ushort)>();
 #if OSC_PURGE_AGGRESSIVE
             Debug.LogWarning("The purge is aggressive! Mocap performance will be limited.");
             purgeMocapPressureIfGreaterThan = 10;
             maxPacketsPerFrame = 2;
             filterNPackets = 3;
 #endif
+        }
+
+        public void OnBackingTrackEnd(object _obj, EventArgs _args)
+        {
+            queuedMocap.Clear();
         }
 
         void buildStringMappings()
@@ -88,6 +93,7 @@ namespace RTP
                 Debug.LogError($"OSC server on {gameObject} not connected to any listener on startup!");
             }
             _active = true;
+            backingManager.OnBackingTrackStop += OnBackingTrackEnd;
         }
 
         void OnDisable()
@@ -122,9 +128,9 @@ namespace RTP
             
             // Debug.Log($"Started parsing mocap data at {Time.time}");
 
-            var nextFrameQueuedMocap = new Queue<(float, Message, ushort)>();
+            var nextFrameQueuedMocap = new Queue<(double, Message, ushort)>();
             
-            (float, Message, ushort) res;
+            (double, Message, ushort) res, queuedDropped;
             Message queuedMessage;
             while (queuedMocap.TryDequeue(out res))
             {
@@ -135,18 +141,29 @@ namespace RTP
                 queuedMessage = res.Item2;
                 // messageBackingTimestamp = res.Item1;
                 backingManager.remoteBackingTrackZeroTimes.TryGetValue(res.Item3, out var zeroTime);
-                var delay = queuedMessage.timestamp.ToUtcTime() - zeroTime;
-                var timeRemaining = delay.TotalSeconds - backingManager.localBackingTrackTiming + audioDelayFactor;
+                // var delay = queuedMessage.timestamp.ToUtcTime() - zeroTime;
+                var timeRemaining = res.Item1 - backingManager.localBackingTrackTiming + audioDelayFactor;
+                // var timeRemaining = res.Item1;
+                // Debug.Log($"Playing queued: {timeRemaining}, {res.Item1}, {backingManager.localBackingTrackTiming}");
                 if (timeRemaining < 0)
                 {
+                   
                     onDataReceived.Invoke(queuedMessage);
                 }
-
                 else
                 {
-                    Debug.Log($"Packet requeued with {timeRemaining}");
+                    // we'll lose a single mocap message every frame, big whoop
+                    // better than going through the whole entire queue again
+                    // Debug.Log($"Dropping packet {res}");
                     nextFrameQueuedMocap.Enqueue(res);
+                    break;
                 }
+
+                // else
+                // {
+                //     Debug.Log($"Packet requeued with {timeRemaining}");
+                //     nextFrameQueuedMocap.Enqueue(res);
+                // }
             }
 
             
@@ -168,18 +185,20 @@ namespace RTP
                     float backingTrackZeroTime;
 
                     DateTime zeroTime;
-                    if (waitForBackingTrack && backingManager && backingManager.playing && backingManager.remoteBackingTrackZeroTimes.TryGetValue(data.UserID, out zeroTime))
+                    if (waitForBackingTrack && backingManager && backingManager.remoteBackingTrackZeroTimes.TryGetValue(data.UserID, out zeroTime))
                     {
                         // this represents the time offset for the packet that is just coming in
-                        var delay = message.timestamp.ToUtcTime() - zeroTime;
-                        // Debug.Log($"{delay}, {backingManager.localBackingTrackTiming}");
-                        if (delay.TotalSeconds > backingManager.localBackingTrackTiming + audioDelayFactor)
+                        var remoteBackingTrackPositionOfMessage = message.timestamp.ToUtcTime() - zeroTime;
+                        // Debug.Log($"{remoteBackingTrackPositionOfMessage}, {backingManager.localBackingTrackTiming}");
+                        if (remoteBackingTrackPositionOfMessage.TotalSeconds > backingManager.localBackingTrackTiming + audioDelayFactor)
                         {
                             if (filterNQueuedPackets > 0 && ++messagesRead % filterNQueuedPackets == 0)
                             {
                                 continue;
                             }
-                            nextFrameQueuedMocap.Enqueue(((float) delay.TotalSeconds, message, data.UserID));
+                            // queuedMocap.Enqueue();
+                            // Debug.Log($"Queueing {message.timestamp} {delay}, {backingManager.localBackingTrackTiming}");
+                            queuedMocap.Enqueue((remoteBackingTrackPositionOfMessage.TotalSeconds, message, data.UserID));
                             continue;
                         }
                     }
@@ -202,7 +221,7 @@ namespace RTP
             #endif
 
             currentMocapPressure = mocapDataIn.Count;
-            queuedMocap = nextFrameQueuedMocap;
+            // queuedMocap = nextFrameQueuedMocap;
             backingTrackQueuedMocapPressure = queuedMocap.Count;
 
             if ((DateTime.Now - lastMessage).TotalSeconds >= 10)
