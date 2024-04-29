@@ -49,6 +49,9 @@ namespace RTP
     {
         private static byte[] _bundleIntro = Encoding.UTF8.GetBytes("#bundle");
 
+        // Use this factor when converting back and forth between OSC fractional seconds.
+        public static uint fractionalFactor = 1000000000;
+
         public readonly ushort PayloadSize;
         public readonly byte[] Payload;
         public readonly ushort UserID;
@@ -109,17 +112,17 @@ namespace RTP
                 // first 32 bits are for the epoch seconds
                 // last 32 bits are for fractional seconds (2<<32 would technically be 1.0)
 
-                // var curTime = DateTime.Now;
+                var curTime = DateTime.UtcNow;
 
 
                 // https://stackoverflow.com/a/21055459
                 // this method gets us fractional seconds as well
                 // also note that according to the spec it's time since 1/1/1900
-                var timeSpan = DateTime.UtcNow - new DateTime(1900, 1, 1, 0, 0, 0);
+                var timeSpan = curTime - new DateTime(1900, 1, 1, 0, 0, 0);
                 var timeSeconds = timeSpan.TotalSeconds;
                 var timeSecsTrunc = (uint)timeSeconds; // this may lose some precision after 2038 be warned
                 var fracSecs = timeSeconds - timeSecsTrunc;
-                var fracSecsTotal = fracSecs * (100000000);
+                var fracSecsTotal = fracSecs * fractionalFactor;
 
                 var fracSecsBytes = BitConverter.GetBytes((uint)fracSecsTotal);
                 var totalSecsBytes = BitConverter.GetBytes(timeSecsTrunc);
@@ -132,6 +135,17 @@ namespace RTP
 
                 Array.Copy(totalSecsBytes, 0, Payload, timetagPos, totalSecsBytes.Length);
                 Array.Copy(fracSecsBytes, 0, Payload, timetagPos + 4, fracSecsBytes.Length);
+
+#if VERIFY_TIMESTAMP
+                {
+                    var datetime = ExtractTimestamp();
+                    if (datetime != curTime)
+                    {
+                        Debug.LogWarning($"Injected timestamp ({curTime}:{curTime.Millisecond} != extracted {datetime}:{datetime.Value.Millisecond}; ");
+                    }
+                }
+#endif
+                
                 return;
 
 
@@ -175,11 +189,7 @@ namespace RTP
                 var fullSecs = BinaryPrimitives.ReadUInt32BigEndian(Payload[timetagPos..]);
                 var fracSecs = BinaryPrimitives.ReadUInt32BigEndian(Payload[(timetagPos + 4)..]);
 
-                double fractionalSecs = fracSecs;
-                while (fractionalSecs > 1)
-                {
-                    fractionalSecs /= 10;
-                }
+                double fractionalSecs = fracSecs / (double) fractionalFactor;
                 // 64 big-endian fixed point time tag
                 // first 32 bits are for the epoch seconds
                 // last 32 bits are for fractional seconds (2<<32 would technically be 1.0)

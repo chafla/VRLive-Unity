@@ -98,18 +98,23 @@ namespace VRLive.Runtime.Player.Local
                 }
                 catch (SocketException e)
                 {
-                    if (e.SocketErrorCode != SocketError.TimedOut)
+                    try
                     {
-                        Debug.LogException(e);
-                        // break;
-                    }
+                        if (e.SocketErrorCode != SocketError.TimedOut)
+                        {
+                            Debug.LogException(e);
+                            // break;
+                        }
 
-                    // If we get into a failure loop, don't let it take down our whole application
-                    continue;
-                }
-                finally
-                {
-                    Thread.Sleep(50);
+                        // If we get into a failure loop, don't let it take down our whole application
+                        continue;
+                    }
+                    
+                    finally
+                    {
+                        Thread.Sleep(50);
+                    }
+                    
                 }
 
                 var vrtpData = new VRTPData((ushort) bytesIn, buf[..bytesIn], 0);

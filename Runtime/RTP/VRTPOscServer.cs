@@ -33,6 +33,8 @@ namespace RTP
 
         public int filterNPackets = 0;
 
+        public int filterNQueuedPackets = 0;
+
         public int maxPacketsPerFrame = 500;
 
         public int currentMocapPressure;
@@ -46,6 +48,8 @@ namespace RTP
         public int purgeMocapPressureIfGreaterThan = int.MaxValue;
 
         private bool _active = false;
+
+        public long packetsHandled;
         
         public Dictionary<string, string> mappings = new Dictionary<string, string>();
         // [DoNotSerialize]
@@ -118,115 +122,77 @@ namespace RTP
             
             // Debug.Log($"Started parsing mocap data at {Time.time}");
 
-            Queue<(float, Message, ushort)> nextFrameQueuedMocap = new Queue<(float, Message, ushort)>();
+            var nextFrameQueuedMocap = new Queue<(float, Message, ushort)>();
             
-
-            while (_active && queuedMocap.Count != 0)
+            (float, Message, ushort) res;
+            Message queuedMessage;
+            while (queuedMocap.TryDequeue(out res))
             {
-                (float, Message, ushort) res;
-                Message queuedMessage;
-                // float messageBackingTimestamp;
-                while (queuedMocap.TryDequeue(out res))
-                {
-                    queuedMessage = res.Item2;
-                    // messageBackingTimestamp = res.Item1;
-                    backingManager.remoteBackingTrackZeroTimes.TryGetValue(res.Item3, out var zeroTime);
-                    var delay = queuedMessage.timestamp.ToUtcTime() - zeroTime;
-                    if (delay.TotalSeconds <= backingManager.localBackingTrackTiming + audioDelayFactor)
-                    {
-                        onDataReceived.Invoke(queuedMessage);
-                    }
+                
 
-                    else
-                    {
-                        nextFrameQueuedMocap.Enqueue(res);
-                    }
+                // float messageBackingTimestamp;
+
+                queuedMessage = res.Item2;
+                // messageBackingTimestamp = res.Item1;
+                backingManager.remoteBackingTrackZeroTimes.TryGetValue(res.Item3, out var zeroTime);
+                var delay = queuedMessage.timestamp.ToUtcTime() - zeroTime;
+                var timeRemaining = delay.TotalSeconds - backingManager.localBackingTrackTiming + audioDelayFactor;
+                if (timeRemaining < 0)
+                {
+                    onDataReceived.Invoke(queuedMessage);
+                }
+
+                else
+                {
+                    Debug.Log($"Packet requeued with {timeRemaining}");
+                    nextFrameQueuedMocap.Enqueue(res);
                 }
             }
+
             
             // Debug.Log($"Incoming mocap pressure: {Listener.MocapDataIn.Count}");
             while (_active && !mocapDataIn.IsEmpty && packetsRead++ < maxPacketsPerFrame)
             {
-                Message queuedMessage;
-                float messageBackingTimestamp;
-                
-               
-                // if (filterNPackets > 0 && packetsRead % filterNPackets == 0)
-                // {
-                //     continue;
-                // }
-                // // Debug.Log($"Started parsing mocap data with {mocapDataIn.Count} mocap items left");
-                // // if (filterNPackets != 0 && packetsRead % filterNPackets != 0)
-                // // {
-                // //     continue;
-                // // }
-                // if (WaitForAudio && mocapDataIn.TryPeek(out data))
-                // {
-                //     var dt = DateTime.Now - data.Arrived;
-                //     // buflength is the buffer size in samples
-                //     int bufLength;
-                //     AudioSettings.GetDSPBufferSize(out bufLength, out _);   
-                //     // divide it by the sample rate (samples / second) to get the amount of time in seconds
-                //     float delayMs = (float) bufLength / 44000;
-                //     if (dt.TotalMilliseconds / 1000 < delayMs)
-                //     {
-                //         // Debug.Log($"Pausing on mocap packet, it's not ready yet. {dt.TotalMilliseconds / 1000} {delayMs}");
-                //         // Listener.MocapDataIn.Enqueue(data);  // todo this may put it out of order...
-                //         break;
-                //     }
-                // }
-                if (mocapDataIn.TryDequeue(out data))
-                {
-                    var pos = 0;
-                    // TODO may be worth revisiting this at some point to remove this weird indirection
-                    _parser.Parse(data.Payload, ref pos, data.PayloadSize);
+                uint messagesRead = 0;
+                packetsHandled++;
+                if (!mocapDataIn.TryDequeue(out data)) break;
+                var pos = 0;
+                // TODO may be worth revisiting this at some point to remove this weird indirection
+                _parser.Parse(data.Payload, ref pos, data.PayloadSize);
                     
-                    // loop over everything to clear the queue
-                    while (_parser.messageCount > 0)
+                // loop over everything to clear the queue
+                while (_parser.messageCount > 0)
+                {
+                    var message = _parser.Dequeue();
+                    // we keep track of the first time we saw a packet from this user while the backing track was playing, which means
+                    float backingTrackZeroTime;
+
+                    DateTime zeroTime;
+                    if (waitForBackingTrack && backingManager && backingManager.playing && backingManager.remoteBackingTrackZeroTimes.TryGetValue(data.UserID, out zeroTime))
                     {
-                        var message = _parser.Dequeue();
-                        // we keep track of the first time we saw a packet from this user while the backing track was playing, which means
-                        float backingTrackZeroTime;
-
-                        DateTime zeroTime;
-                        if (waitForBackingTrack && backingManager && backingManager.playing && backingManager.remoteBackingTrackZeroTimes.TryGetValue(data.UserID, out zeroTime))
+                        // this represents the time offset for the packet that is just coming in
+                        var delay = message.timestamp.ToUtcTime() - zeroTime;
+                        // Debug.Log($"{delay}, {backingManager.localBackingTrackTiming}");
+                        if (delay.TotalSeconds > backingManager.localBackingTrackTiming + audioDelayFactor)
                         {
-
-                            // this represents the time offset for the packet that is just coming in
-                            var delay = message.timestamp.ToUtcTime() - zeroTime;
-                            // var timeToPlay = backingManager.backingTrackZeroTime.Value.AddSeconds();
-                            // how long it's been
-                            // var dt = DateTime.Now - backingManager.backingTrackZeroTime;
-                            // var dt = backingManager.localBackingTrackTiming;
-                            // var essageTime = (DateTime.Now - message.timestamp.ToLocalTime()).TotalSeconds;
-                            // Debug.Log($"{timeToPlay - DateTime.Now}");
-                            Debug.Log($"{delay}, {backingManager.localBackingTrackTiming}");
-                            if (delay.TotalSeconds > backingManager.localBackingTrackTiming + audioDelayFactor)
+                            if (filterNQueuedPackets > 0 && ++messagesRead % filterNQueuedPackets == 0)
                             {
-                                nextFrameQueuedMocap.Enqueue(((float) delay.TotalSeconds, message, data.UserID));
                                 continue;
                             }
-                            // var dt = frameStartTime - messageTime;
-
+                            nextFrameQueuedMocap.Enqueue(((float) delay.TotalSeconds, message, data.UserID));
+                            continue;
                         }
-                        // Debug.Log($"OSC Message in: {message}");
-                        // if ()
-                        // var message.timestamp.ToLocalTime()
-                        onDataReceived.Invoke(message);
+                    }
+                    onDataReceived.Invoke(message);
                         
 #if UNITY_EDITOR
                     _onDataReceivedEditor.Invoke(message);
 #endif
-                    }
-                   
-                    
                 }
-                
-                
-                
+
+
+
             }
-            
-            // Debug.Log($"Finished parsing mocap data at {Time.time}");
 
             #if DEBUG_MOCAP_PRESSURE
             if (packetsRead >= maxPacketsPerFrame)

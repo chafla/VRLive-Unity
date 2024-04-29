@@ -39,6 +39,8 @@ namespace VRLive.Runtime.Player.Local.SlimeVR
         // private ConcurrentQueue<VRTPData> oscDataOut;
 
         public ConcurrentQueue<MocapData> mocapDataIn;
+
+        public int returnerPressure;
         
         public void SendMocapDataThread()
         {
@@ -50,6 +52,7 @@ namespace VRLive.Runtime.Player.Local.SlimeVR
             {
                 var endpoint = new IPEndPoint(IPAddress.Parse(slimeVRIP), slimeVRInputPort);
                 MocapData data;
+                returnerPressure = mocapDataIn.Count;
                 while (mocapDataIn.TryDequeue(out data))
                 {
                     Bundle bundle;
@@ -89,7 +92,7 @@ namespace VRLive.Runtime.Player.Local.SlimeVR
                         socket.SendTo(stream.GetBuffer()[..(int)stream.Position], endpoint);
                     }
                     
-                    
+                    Thread.Sleep(2);
                     
                 }
                 
