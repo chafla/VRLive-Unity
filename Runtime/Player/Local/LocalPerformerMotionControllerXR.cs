@@ -189,8 +189,21 @@ namespace VRLive.Runtime.Player.Local
 
                 public void AddRootMessage(ref Bundle bundle)
                 {
+	                
+	                #if OVERRIDE_HEAD_IF_ZERO_ROOT
+	                var existingRoot = new Vector3(OriginPos.x, OriginPos.y, OriginPos.z);
+	                if (existingRoot == Vector3.zero)
+	                {
+		                OriginPos.y = 1.0f;
+	                }
+	                #endif
 	                bundle.Add(new Message(
 		                RootPosVRM,
+
+		                // #if OVERRIDE_HEAD_IF_ZERO_ROOT
+		                
+		                // #endif
+		                
 		                new object[]
 		                {
 			                // NOTE!
